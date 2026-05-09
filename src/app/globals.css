@@ -1,0 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --neon-green:  #00ff87;
+  --neon-blue:   #00d4ff;
+  --neon-purple: #7b2fff;
+  --bg-base:     #060611;
+  --bg-surface:  #0d0d1f;
+  --bg-card:     #10102a;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: #e2e8f0;
+  font-family: 'Outfit', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-surface); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--neon-blue), var(--neon-green));
+  border-radius: 2px;
+}
+
+/* ── Selection ─────────────────────────────────────────────── */
+::selection {
+  background: rgba(0, 212, 255, 0.2);
+  color: var(--neon-blue);
+}
+
+/* ── Glass card utility ────────────────────────────────────── */
+@layer components {
+  .glass {
+    background: rgba(13, 13, 31, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(0, 212, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  }
+
+  .glass-green {
+    background: rgba(0, 255, 135, 0.04);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 255, 135, 0.15);
+    box-shadow: 0 0 30px rgba(0, 255, 135, 0.06),
+                inset 0 1px 0 rgba(0, 255, 135, 0.08);
+  }
+
+  .glass-blue {
+    background: rgba(0, 212, 255, 0.04);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 212, 255, 0.15);
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.06),
+                inset 0 1px 0 rgba(0, 212, 255, 0.08);
+  }
+
+  .neon-text-green {
+    color: var(--neon-green);
+    text-shadow: 0 0 10px rgba(0, 255, 135, 0.5),
+                 0 0 30px rgba(0, 255, 135, 0.2);
+  }
+
+  .neon-text-blue {
+    color: var(--neon-blue);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5),
+                 0 0 30px rgba(0, 212, 255, 0.2);
+  }
+
+  .neon-border-green {
+    border-color: rgba(0, 255, 135, 0.4);
+    box-shadow: 0 0 10px rgba(0, 255, 135, 0.2),
+                inset 0 0 10px rgba(0, 255, 135, 0.05);
+  }
+
+  .neon-border-blue {
+    border-color: rgba(0, 212, 255, 0.4);
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2),
+                inset 0 0 10px rgba(0, 212, 255, 0.05);
+  }
+
+  .btn-neon-green {
+    background: linear-gradient(135deg, rgba(0,255,135,0.15), rgba(0,255,135,0.05));
+    border: 1px solid rgba(0, 255, 135, 0.5);
+    color: var(--neon-green);
+    transition: all 0.2s ease;
+  }
+  .btn-neon-green:hover {
+    background: linear-gradient(135deg, rgba(0,255,135,0.25), rgba(0,255,135,0.1));
+    box-shadow: 0 0 20px rgba(0,255,135,0.4), 0 0 40px rgba(0,255,135,0.1);
+    transform: translateY(-1px);
+  }
+  .btn-neon-green:active { transform: translateY(0); }
+
+  .btn-neon-blue {
+    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05));
+    border: 1px solid rgba(0, 212, 255, 0.5);
+    color: var(--neon-blue);
+    transition: all 0.2s ease;
+  }
+  .btn-neon-blue:hover {
+    background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,212,255,0.1));
+    box-shadow: 0 0 20px rgba(0,212,255,0.4), 0 0 40px rgba(0,212,255,0.1);
+    transform: translateY(-1px);
+  }
+
+  .btn-solid-green {
+    background: var(--neon-green);
+    color: #060611;
+    font-weight: 700;
+    transition: all 0.2s ease;
+  }
+  .btn-solid-green:hover {
+    box-shadow: 0 0 25px rgba(0,255,135,0.5), 0 0 50px rgba(0,255,135,0.2);
+    transform: translateY(-1px);
+  }
+
+  .input-glass {
+    background: rgba(6, 6, 17, 0.6);
+    border: 1px solid rgba(0, 212, 255, 0.12);
+    color: #e2e8f0;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+  .input-glass:focus {
+    border-color: rgba(0, 212, 255, 0.4);
+    box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.08),
+                0 0 15px rgba(0, 212, 255, 0.1);
+  }
+  .input-glass::placeholder { color: #334155; }
+
+  .tab-active {
+    color: var(--neon-green);
+    border-bottom: 2px solid var(--neon-green);
+    text-shadow: 0 0 10px rgba(0, 255, 135, 0.4);
+  }
+
+  .progress-neon {
+    background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
+    box-shadow: 0 0 10px rgba(0, 255, 135, 0.4);
+  }
+
+  /* Scan line overlay effect */
+  .scanlines::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.03) 2px,
+      rgba(0, 0, 0, 0.03) 4px
+    );
+    pointer-events: none;
+    border-radius: inherit;
+  }
+}
+
+/* ── Ticker animation (pause on hover) ─────────────────────── */
+.ticker-wrap:hover .ticker-inner {
+  animation-play-state: paused;
+}
+
+/* ── RainbowKit overrides ───────────────────────────────────── */
+[data-rk] {
+  --rk-colors-accentColor: var(--neon-blue) !important;
+  --rk-colors-accentColorForeground: #060611 !important;
+  --rk-colors-modalBackground: #0d0d1f !important;
+  --rk-colors-modalBorder: rgba(0,212,255,0.15) !important;
+  --rk-colors-menuItemBackground: rgba(0,212,255,0.05) !important;
+  --rk-fonts-body: 'Outfit', sans-serif !important;
+}
