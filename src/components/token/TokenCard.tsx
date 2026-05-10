@@ -54,7 +54,7 @@ interface Props {
 export default function TokenCard({ info, meta }: Props) {
   const chainId = useChainId();
   const chainMeta = getChainMeta(chainId);
-  const ethUSD = useETHUSD();
+  const ethUSD = useETHUSD(chainId);
 
   const { data: pool } = usePoolInfo(info.pool as `0x${string}`);
 

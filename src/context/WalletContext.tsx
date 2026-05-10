@@ -6,15 +6,15 @@ import { baseSepolia } from "wagmi/chains";
 import { getChainMeta, SUPPORTED_CHAIN_IDS } from "@/lib/chains";
 
 interface WalletContextType {
-  address:          `0x${string}` | undefined;
-  isConnected:      boolean;
-  isConnecting:     boolean;
-  chainId:          number;
-  chainMeta:        ReturnType<typeof getChainMeta>;
+  address: `0x${string}` | undefined;
+  isConnected: boolean;
+  isConnecting: boolean;
+  chainId: number;
+  chainMeta: ReturnType<typeof getChainMeta>;
   isUnsupportedChain: boolean;
-  balance:          bigint | undefined;
+  balance: bigint | undefined;
   balanceFormatted: string;
-  switchChain:      (id: number) => void;
+  switchChain: (id: number) => void;
   supportedChainIds: number[];
 }
 
@@ -30,7 +30,8 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     query: { enabled: !!address },
   });
 
-  const isUnsupportedChain = isConnected && !SUPPORTED_CHAIN_IDS.includes(chainId);
+  const isUnsupportedChain =
+    isConnected && !SUPPORTED_CHAIN_IDS.includes(chainId as 84532 | 8453);
   const chainMeta = getChainMeta(chainId);
 
   const balanceFormatted = useMemo(() => {
@@ -44,18 +45,20 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const switchChain = (id: number) => wagmiSwitch({ chainId: id });
 
   return (
-    <WalletContext.Provider value={{
-      address,
-      isConnected,
-      isConnecting,
-      chainId: chainId ?? baseSepolia.id,
-      chainMeta,
-      isUnsupportedChain,
-      balance:          balanceData?.value,
-      balanceFormatted,
-      switchChain,
-      supportedChainIds: SUPPORTED_CHAIN_IDS,
-    }}>
+    <WalletContext.Provider
+      value={{
+        address,
+        isConnected,
+        isConnecting,
+        chainId: chainId ?? baseSepolia.id,
+        chainMeta,
+        isUnsupportedChain,
+        balance: balanceData?.value,
+        balanceFormatted,
+        switchChain,
+        supportedChainIds: SUPPORTED_CHAIN_IDS,
+      }}
+    >
       {children}
     </WalletContext.Provider>
   );

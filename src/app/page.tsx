@@ -276,7 +276,7 @@ export default function HomePage() {
 
   const chainId = useChainId();
   const chainMeta = getChainMeta(chainId);
-  const { usd: nativeUSD, loading: priceLoading } = useETHPrice();
+  const { usd: nativeUSD, loading: priceLoading } = useETHPrice(chainId);
 
   // Debounce search 300 ms
   useEffect(() => {
@@ -327,7 +327,7 @@ export default function HomePage() {
     () =>
       displayed.map((t) =>
         "pool_address" in t
-          ? (t as PGTokenRow).pool_address
+          ? (t as unknown as PGTokenRow).pool_address
           : (t as TokenInfo).pool,
       ),
     [displayed],

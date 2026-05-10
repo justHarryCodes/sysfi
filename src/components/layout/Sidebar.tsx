@@ -58,7 +58,7 @@ export default function Sidebar() {
               className="text-[10px] font-mono"
               style={{ color: chainMeta.color }}
             >
-              {chainMeta.icon} {chainMeta.chain.name}
+              {chainMeta.iconSrc} {chainMeta.chain.name}
             </p>
           </div>
         </div>

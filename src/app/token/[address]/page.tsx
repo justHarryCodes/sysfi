@@ -9,7 +9,7 @@ interface Props {
 // ─── Dynamic metadata for social share cards ──────────────────────────────────
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const pool = params.address.toLowerCase();
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://yourdomain.com";
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.sysfidao.com";
 
   // Defaults — shown if MongoDB lookup fails
   let name = "Token on Sysfi";

@@ -71,6 +71,8 @@ export default function LaunchForm() {
         let tokenAddress: string | null = null;
         let creatorAddress: string | null = null;
 
+        if (!receipt) return;
+
         for (const log of receipt.logs) {
           try {
             const decoded = decodeEventLog({

@@ -203,7 +203,8 @@ function PortfolioRow({ info, ethUSD }: { info: TokenInfo; ethUSD: number }) {
 
 export default function PortfolioPage() {
   const { isConnected, address } = useWallet();
-  const ethUSD = useETHUSD();
+  const chainId = useChainId();
+  const ethUSD = useETHUSD(chainId);
   const { data: total } = useTotalTokens();
   const totalN = Number(total ?? 0n);
   const { data: tokens, isLoading } = useTokensPaginated(
