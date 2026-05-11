@@ -175,7 +175,7 @@ export const CHAIN_META: Record<number, ChainMeta> = {
 // ─── Ordered list ─────────────────────────────────────────────────────────────
 
 export const SUPPORTED_CHAIN_IDS = [
-  baseSepolia.id,
+  // baseSepolia.id,
   base.id,
   // bsc.id,
   // avalanche.id,
