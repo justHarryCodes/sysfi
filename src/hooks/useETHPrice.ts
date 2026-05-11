@@ -36,8 +36,6 @@ interface ETHPriceState {
 const CACHE_TTL = 60_000; // 1 minute
 
 // ─── Per-chain singletons ─────────────────────────────────────────────────────
-// Each chain gets its own price cache, listener set, and polling interval
-// so switching chains triggers a fresh fetch without tearing down others.
 
 interface ChainState {
   price: number;
@@ -75,9 +73,9 @@ async function fetchPrice(
   const coinId = COINGECKO_IDS[chainId] ?? "ethereum";
   const cacheKey = `coingecko_price_${coinId}`;
 
-  // Try sessionStorage cache first
+  // localStorage cache so price persists across page refreshes
   try {
-    const cached = sessionStorage.getItem(cacheKey);
+    const cached = localStorage.getItem(cacheKey);
     if (cached) {
       const { price, change24h, ts } = JSON.parse(cached);
       if (Date.now() - ts < CACHE_TTL) return { price, change24h };
@@ -86,7 +84,6 @@ async function fetchPrice(
     /* ignore */
   }
 
-  // CoinGecko simple price — free, no API key needed
   const res = await fetch(
     `https://api.coingecko.com/api/v3/simple/price` +
       `?ids=${coinId}&vs_currencies=usd&include_24hr_change=true`,
@@ -100,7 +97,7 @@ async function fetchPrice(
   const change24h = entry?.usd_24h_change ?? null;
 
   try {
-    sessionStorage.setItem(
+    localStorage.setItem(
       cacheKey,
       JSON.stringify({ price, change24h, ts: Date.now() }),
     );
@@ -123,7 +120,7 @@ function startPolling(chainId: number) {
       const { price, change24h } = await fetchPrice(chainId);
       notifyAll(chainId, price, change24h);
     } catch {
-      /* silent — keep last known value */
+      /* keep last known */
     }
   };
 
@@ -131,7 +128,7 @@ function startPolling(chainId: number) {
   setInterval(poll, CACHE_TTL);
 }
 
-// ─── Hook ─────────────────────────────────────────────────────────────────────
+// ─── Hooks ────────────────────────────────────────────────────────────────────
 
 export function useETHPrice(chainId: number): ETHPriceState {
   const s = getChainState(chainId);
@@ -158,7 +155,6 @@ export function useETHPrice(chainId: number): ETHPriceState {
     const s = getChainState(chainId);
     s.listeners.add(onPrice);
     startPolling(chainId);
-    // Push cached value immediately if available
     if (s.price > 0) onPrice(s.price, s.change24h);
     return () => {
       s.listeners.delete(onPrice);
@@ -168,7 +164,7 @@ export function useETHPrice(chainId: number): ETHPriceState {
   return state;
 }
 
-/** Lightweight hook — just returns the USD number (0 while loading) */
+/** Lightweight — just the USD number (0 while loading) */
 export function useETHUSD(chainId: number): number {
   const { usd } = useETHPrice(chainId);
   return usd;

@@ -88,6 +88,16 @@ function buildCandles(points: PricePoint[], intervalSecs: number): OHLCV[] {
   return candles;
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Convert a price in ETH/token to USD using the live ETH/USD rate.
+ * Falls back to 0 if ethUSD is not yet loaded (avoids NaN in the UI).
+ */
+function toUSD(priceETH: number, ethUSD: number): number {
+  return priceETH * (ethUSD || 0);
+}
+
 // ─── Stat pill ────────────────────────────────────────────────────────────────
 
 function StatPill({
@@ -126,12 +136,20 @@ function StatPill({
   );
 }
 
-// ─── Main chart component ─────────────────────────────────────────────────────
+// ─── Props ────────────────────────────────────────────────────────────────────
 
 interface PriceChartProps {
   poolAddr: `0x${string}` | undefined;
+  /**
+   * The contract's currentPrice() return value — wei per whole token.
+   * i.e. the result of LaunchPool._priceInWei(virtualETH).
+   * Unit: wei  (NOT raw virtualETH, NOT an ETH amount).
+   * Divide by 1e18 to get ETH/token as a float.
+   */
   currentPriceWei: bigint;
 }
+
+// ─── Main chart component ─────────────────────────────────────────────────────
 
 export default function PriceChart({
   poolAddr,
@@ -147,42 +165,54 @@ export default function PriceChart({
   const [chartType, setChartType] = useState<ChartType>("candle");
   const [hoveredOHLC, setHoveredOHLC] = useState<OHLCV | null>(null);
 
-const chainId = useChainId();
-const ethUSD = useETHUSD(chainId);
+  const chainId = useChainId();
+  const ethUSD = useETHUSD(chainId) ?? 0; // safe fallback — never undefined downstream
+
   const { points, loading } = usePriceHistory(poolAddr);
 
-  // Append current live price as the latest point
+  // ── Append current live price as the latest synthetic point ──────────────
+  //
+  // currentPriceWei is the output of LaunchPool.currentPrice() which calls
+  // _priceInWei(virtualETH) → returns wei-denominated price per whole token.
+  // Dividing by 1e18 gives ETH/token as a float, matching PricePoint.priceETH.
+  //
+  // DO NOT pass currentPriceWei through priceFromVirtualETH() — it is already
+  // the computed price, not a virtualETH reserve value.
+  const currentPriceETH = Number(currentPriceWei) / 1e18;
+
   const allPoints: PricePoint[] = useMemo(() => {
-    const now: PricePoint = {
+    if (currentPriceWei === 0n) return points; // pool not yet initialized
+
+    const livePoint: PricePoint = {
       time: Math.floor(Date.now() / 1000),
-      priceETH: Number(currentPriceWei) / 1e18,
+      priceETH: currentPriceETH,
       type: "buy",
       ethVolume: 0,
       blockNumber: 0n,
     };
-    return [...points, now];
-  }, [points, currentPriceWei]);
+    return [...points, livePoint];
+  }, [points, currentPriceWei, currentPriceETH]);
 
-  // Filter to selected range
+  // ── Filter to selected range ──────────────────────────────────────────────
   const rangePoints = useMemo(() => {
     if (range === "all") return allPoints;
     const cutoff = Math.floor(Date.now() / 1000) - RANGE_SECONDS[range];
     return allPoints.filter((p) => p.time >= cutoff);
   }, [allPoints, range]);
 
-  // Build OHLCV candles
+  // ── Build OHLCV candles ───────────────────────────────────────────────────
   const candles = useMemo(
     () => buildCandles(rangePoints, CANDLE_INTERVAL[range]),
     [rangePoints, range],
   );
 
-  // Area series data (close prices)
+  // ── Area series data (close prices) ──────────────────────────────────────
   const lineData = useMemo(
     () => candles.map((c) => ({ time: c.time, value: c.close })),
     [candles],
   );
 
-  // Volume histogram data
+  // ── Volume histogram data ─────────────────────────────────────────────────
   const volumeData: HistogramData[] = useMemo(
     () =>
       candles.map((c) => ({
@@ -194,7 +224,7 @@ const ethUSD = useETHUSD(chainId);
     [candles],
   );
 
-  // Price change for selected range
+  // ── Price change for selected range ───────────────────────────────────────
   const priceChange = useMemo(() => {
     if (candles.length < 2) return null;
     const first = candles[0].open;
@@ -205,7 +235,7 @@ const ethUSD = useETHUSD(chainId);
 
   const currentCandle = hoveredOHLC ?? candles[candles.length - 1] ?? null;
 
-  // ── Create chart once ──────────────────────────────────────────────────────
+  // ── Create chart once ─────────────────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -237,7 +267,6 @@ const ethUSD = useETHUSD(chainId);
       },
       rightPriceScale: {
         borderColor: "rgba(0,212,255,0.1)",
-        // bottom leaves room for the volume bars
         scaleMargins: { top: 0.06, bottom: 0.28 },
         entireTextOnly: true,
         autoScale: true,
@@ -246,11 +275,9 @@ const ethUSD = useETHUSD(chainId);
         borderColor: "rgba(0,212,255,0.1)",
         timeVisible: true,
         secondsVisible: false,
-        // ── these three are what make candles the right size ──────────────
-        barSpacing: 6, // px wide per candle — Binance-style density
-        minBarSpacing: 0.5, // lets user zoom all the way out
-        rightOffset: 8, // empty bars after the last candle
-        // ─────────────────────────────────────────────────────────────────
+        barSpacing: 6,
+        minBarSpacing: 0.5,
+        rightOffset: 8,
         fixLeftEdge: false,
         lockVisibleTimeRangeOnResize: true,
         tickMarkFormatter: (time: number) => {
@@ -268,7 +295,7 @@ const ethUSD = useETHUSD(chainId);
       handleScale: { mouseWheel: true, pinch: true },
     });
 
-    // ── Volume histogram (pinned to bottom 12% of chart) ──────────────────
+    // Volume histogram — pinned to bottom 12% of chart
     const volSeries = chart.addHistogramSeries({
       priceFormat: { type: "volume" },
       priceScaleId: "volume",
@@ -279,7 +306,7 @@ const ethUSD = useETHUSD(chainId);
       scaleMargins: { top: 0.88, bottom: 0 },
     });
 
-    // ── Candlestick series ────────────────────────────────────────────────
+    // Candlestick series
     const candleSeries = chart.addCandlestickSeries({
       upColor: "#00ff87",
       downColor: "#ff2d78",
@@ -289,11 +316,10 @@ const ethUSD = useETHUSD(chainId);
       wickDownColor: "rgba(255,45,120,0.8)",
       priceLineColor: "rgba(0,212,255,0.35)",
       priceLineStyle: LineStyle.Dashed,
-      // thinner wicks look more like TradingView
       wickVisible: true,
     });
 
-    // ── Area / line series ────────────────────────────────────────────────
+    // Area / line series
     const areaSeries = chart.addAreaSeries({
       lineColor: "#00ff87",
       topColor: "rgba(0,255,135,0.2)",
@@ -306,7 +332,7 @@ const ethUSD = useETHUSD(chainId);
       lastValueVisible: true,
     });
 
-    // ── Crosshair move → update OHLC display ─────────────────────────────
+    // Crosshair move → update OHLC display
     chart.subscribeCrosshairMove((param) => {
       if (!param.time || !param.seriesData) {
         setHoveredOHLC(null);
@@ -334,7 +360,6 @@ const ethUSD = useETHUSD(chainId);
     lineRef.current = areaSeries;
     volumeRef.current = volSeries;
 
-    // Responsive resize
     const ro = new ResizeObserver(() => {
       if (containerRef.current && chartRef.current) {
         chartRef.current.applyOptions({
@@ -378,11 +403,17 @@ const ethUSD = useETHUSD(chainId);
   }, [range]);
 
   // ── USD price formatter for Y-axis ────────────────────────────────────────
+  //
+  // The chart library calls this with the series value, which is priceETH
+  // (ETH per whole token). Multiply by ethUSD to get the USD display price.
+  // Fall back to ethUSD=1 so the axis still shows sensible ETH values when
+  // the price feed hasn't loaded yet.
   useEffect(() => {
     if (!chartRef.current) return;
     chartRef.current.applyOptions({
       localization: {
-        priceFormatter: (price: number) => formatUSD(price * (ethUSD || 1)),
+        priceFormatter: (priceETH: number) =>
+          formatUSD(priceETH * (ethUSD || 1)),
       },
     });
   }, [ethUSD]);
@@ -400,6 +431,7 @@ const ethUSD = useETHUSD(chainId);
             <span className="text-xs font-mono font-bold text-text-primary">
               Price Chart
             </span>
+
             {priceChange !== null && (
               <span
                 className="flex items-center gap-0.5 text-[11px] font-mono font-bold px-2 py-0.5 rounded-md"
@@ -425,24 +457,25 @@ const ethUSD = useETHUSD(chainId);
           {/* OHLCV — updates on hover, falls back to last candle */}
           {currentCandle && (
             <div className="flex items-center gap-3 flex-wrap">
+              {/* All StatPills now guard against ethUSD=0 via toUSD() */}
               <StatPill
                 label="O"
-                value={formatUSD(currentCandle.open * ethUSD)}
+                value={formatUSD(toUSD(currentCandle.open, ethUSD))}
                 positive={currentCandle.close >= currentCandle.open}
               />
               <StatPill
                 label="H"
-                value={formatUSD(currentCandle.high * ethUSD)}
+                value={formatUSD(toUSD(currentCandle.high, ethUSD))}
                 positive
               />
               <StatPill
                 label="L"
-                value={formatUSD(currentCandle.low * ethUSD)}
+                value={formatUSD(toUSD(currentCandle.low, ethUSD))}
                 positive={false}
               />
               <StatPill
                 label="C"
-                value={formatUSD(currentCandle.close * ethUSD)}
+                value={formatUSD(toUSD(currentCandle.close, ethUSD))}
                 positive={currentCandle.close >= currentCandle.open}
               />
               {currentCandle.volume > 0 && (
@@ -573,7 +606,7 @@ const ethUSD = useETHUSD(chainId);
           </div>
         )}
 
-        {/* TradingView canvas — 380px tall, matches pro trading tools */}
+        {/* TradingView canvas */}
         <div
           ref={containerRef}
           style={{

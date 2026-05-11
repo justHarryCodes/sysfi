@@ -495,7 +495,7 @@ export default function LaunchForm() {
 
           <GlassCard glow="green" className="p-5">
             <div className="flex justify-between items-center mb-4">
-              <span className="text-sm text-text-secondary">Creation fee</span>
+              <span className="text-sm text-text-secondary">Contract Deployment Cost</span>
               <span
                 className="font-mono font-bold text-xl"
                 style={{

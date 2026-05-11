@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title,
       description,
       images: [ogImgUrl],
-      site: "@sysfi", // ← change to your Twitter handle
+      site: "@sysfiDAO", // ← change to your Twitter handle
     },
   };
 }

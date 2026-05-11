@@ -54,12 +54,6 @@ export default function Sidebar() {
             <p className="font-display font-bold text-sm tracking-wide text-text-primary">
               Sysfi
             </p>
-            <p
-              className="text-[10px] font-mono"
-              style={{ color: chainMeta.color }}
-            >
-              {chainMeta.iconSrc} {chainMeta.chain.name}
-            </p>
           </div>
         </div>
       </div>
