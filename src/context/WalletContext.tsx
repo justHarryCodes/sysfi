@@ -31,7 +31,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   });
 
   const isUnsupportedChain =
-    isConnected && !SUPPORTED_CHAIN_IDS.includes(chainId as 84532 | 8453);
+    isConnected && !SUPPORTED_CHAIN_IDS.includes(chainId as 8453);
   const chainMeta = getChainMeta(chainId);
 
   const balanceFormatted = useMemo(() => {
