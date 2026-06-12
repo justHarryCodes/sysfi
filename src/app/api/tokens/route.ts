@@ -1,3 +1,5 @@
+﻿export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/tokens?chainId=84532&page=0&limit=20&search=pepe
  *

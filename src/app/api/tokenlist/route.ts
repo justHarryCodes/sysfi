@@ -1,3 +1,5 @@
+﻿export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/tokenlist.json?chainId=84532
  * GET /api/tokenlist.json              (all chains)

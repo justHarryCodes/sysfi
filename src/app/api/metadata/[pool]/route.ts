@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * GET    /api/metadata/:pool?chainId=84532  → full record (no image data in default response)
  * GET    /api/metadata/:pool?chainId=84532&withImages=1  → include base64 image data

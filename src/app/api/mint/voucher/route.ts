@@ -1,3 +1,5 @@
+﻿export const dynamic = 'force-dynamic';
+
 import { NextRequest } from "next/server";
 import { verifyFirebaseToken, unauthorized, badRequest, serverError } from "@/lib/firebase-auth";
 import {

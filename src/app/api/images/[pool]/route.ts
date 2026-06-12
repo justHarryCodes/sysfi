@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/images/:pool?chainId=84532&type=logo
  * GET /api/images/:pool?chainId=84532&type=banner

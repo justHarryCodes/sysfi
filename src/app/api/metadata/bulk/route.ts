@@ -1,3 +1,5 @@
+﻿export const dynamic = 'force-dynamic';
+
 /**
  * GET /api/metadata/bulk?pools=0xabc,0xdef&chainId=84532
  * Returns metadata for multiple pool addresses in a single MongoDB query.

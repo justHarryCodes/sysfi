@@ -1,3 +1,5 @@
+﻿export const dynamic = 'force-dynamic';
+
 /**
  * POST /api/tokens/sync?chainId=84532   → sync one chain
  * POST /api/tokens/sync                 → sync all chains

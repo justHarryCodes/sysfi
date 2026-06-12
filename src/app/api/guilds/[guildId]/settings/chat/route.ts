@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest } from "next/server";
 import { verifyFirebaseToken, unauthorized, ok, serverError } from "@/lib/firebase-auth";
 import { getChatSettings, updateChatSettings, getGuildById } from "@/lib/guild-service";

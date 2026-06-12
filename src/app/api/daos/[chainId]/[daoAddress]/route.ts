@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from "next/server";
 import { getDAOByAddress } from "@/lib/blockchain-dao";
 import { getDAOMetadata } from "@/lib/mongo-dao";

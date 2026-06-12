@@ -1,3 +1,5 @@
+﻿export const dynamic = 'force-dynamic';
+
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/mongodb";
 import { getSupportedChains } from "@/lib/blockchain-dao";

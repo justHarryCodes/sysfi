@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest } from "next/server";
 import { ok, serverError } from "@/lib/firebase-auth";
 import { getInviteByCode } from "@/lib/guild-service";

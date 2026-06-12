@@ -1,3 +1,5 @@
+﻿export const dynamic = 'force-dynamic';
+
 /**
  * GET  /api/metadata?chainId=84532&page=0&limit=20
  *   → paginated list (images stripped for speed — use /api/images/:pool for images)

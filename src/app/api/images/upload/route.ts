@@ -1,3 +1,5 @@
+﻿export const dynamic = 'force-dynamic';
+
 /**
  * Signed Cloudinary upload proxy.
  * The API secret never leaves the server.

@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import { NextRequest } from "next/server";
 import { verifyFirebaseToken, unauthorized, serverError } from "@/lib/firebase-auth";
 import { addImpression } from "@/lib/guild-mongo";

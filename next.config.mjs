@@ -109,7 +109,7 @@ const nextConfig = {
     ],
   },
 
-  serverExternalPackages: ["mongodb"],
+  serverComponentsExternalPackages: ["mongodb"],
 
   // Cache headers for OG images and the token list endpoint
   async headers() {

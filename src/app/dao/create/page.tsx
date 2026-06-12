@@ -43,7 +43,9 @@ const PAYMENT_METHODS = [
   { value: 1, label: "Token" },
 ];
 
-export default function CreateDAOPage() {
+import { Suspense } from "react";
+
+function CreateDAOContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { address } = useAccount();
@@ -499,6 +501,14 @@ export default function CreateDAOPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function CreateDAOPage() {
+  return (
+    <Suspense fallback={<div className="animate-pulse p-8 text-text-secondary text-sm font-mono">Loading…</div>}>
+      <CreateDAOContent />
+    </Suspense>
   );
 }
 
