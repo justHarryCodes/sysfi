@@ -10,7 +10,7 @@ export interface TrendingCoin {
   price_btc:   number;
   score:       number;
   data?: {
-    price:              string;
+    price:              string | number;
     price_change_percentage_24h?: { usd: number };
     market_cap?:        string;
     total_volume?:      string;

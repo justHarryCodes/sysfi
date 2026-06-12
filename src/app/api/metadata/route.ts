@@ -5,7 +5,8 @@
  * POST /api/metadata
  *   body: { poolAddress, chainId, tokenAddress, creatorAddress,
  *            name, symbol, description,
- *            logoData, bannerData,          ← base64 JPEG data URLs
+ *            logoUrl, bannerUrl,            ← Cloudinary CDN URLs (preferred)
+ *            logoData, bannerData,          ← base64 JPEG data URLs (legacy)
  *            website, twitter, telegram, discord }
  *   → upsert
  */
@@ -58,14 +59,19 @@ export async function GET(req: NextRequest) {
     // Re-add hasLogo/hasBanner flags via a second lightweight query
     const pools = rawDocs.map(d => d.poolAddress as string);
     const imageFlagDocs = await col.find(
-      { poolAddress: { $in: pools }, chainId: chainId || { $exists: true } },
-      { projection: { poolAddress: 1, chainId: 1, logoData: { $substr: ["$logoData", 0, 5] }, bannerData: { $substr: ["$bannerData", 0, 5] } } }
+      { poolAddress: { $in: pools }, ...(chainId ? { chainId } : {}) },
+      { projection: { poolAddress: 1, chainId: 1,
+        logoData:  { $substr: ["$logoData",  0, 5] },
+        bannerData:{ $substr: ["$bannerData",0, 5] },
+        logoUrl:   { $substr: ["$logoUrl",   0, 5] },
+        bannerUrl: { $substr: ["$bannerUrl", 0, 5] },
+      } }
     ).toArray();
 
     const flagMap = new Map(
       imageFlagDocs.map(d => [
         `${d.poolAddress}:${d.chainId}`,
-        { hasLogo: !!d.logoData, hasBanner: !!d.bannerData },
+        { hasLogo: !!d.logoData || !!d.logoUrl, hasBanner: !!d.bannerData || !!d.bannerUrl },
       ])
     );
 
@@ -91,8 +97,10 @@ export async function POST(req: NextRequest) {
       poolAddress, chainId, tokenAddress, creatorAddress,
       name, symbol,
       description = "",
-      logoData    = "",
-      bannerData  = "",
+      logoUrl     = "",   // Cloudinary CDN URL (preferred)
+      bannerUrl   = "",   // Cloudinary CDN URL (preferred)
+      logoData    = "",   // base64 data URL (legacy fallback)
+      bannerData  = "",   // base64 data URL (legacy fallback)
       website     = "",
       twitter     = "",
       telegram    = "",
@@ -123,7 +131,7 @@ export async function POST(req: NextRequest) {
     );
 
     const now = new Date();
-    const doc = {
+    const doc: Record<string, unknown> = {
       poolAddress:    pool,
       chainId:        Number(chainId),
       tokenAddress:   trimStr(tokenAddress,   64),
@@ -131,8 +139,10 @@ export async function POST(req: NextRequest) {
       name:           trimStr(name,            64),
       symbol:         trimStr(symbol,          16).toUpperCase(),
       description:    trimStr(description,    500),
-      logoData:       trimStr(logoData,        MAX_IMAGE_BYTES * 1.4),
-      bannerData:     trimStr(bannerData,      MAX_IMAGE_BYTES * 1.4),
+      logoUrl:        trimStr(logoUrl,        500),   // Cloudinary URL
+      bannerUrl:      trimStr(bannerUrl,      500),   // Cloudinary URL
+      logoData:       trimStr(logoData,        MAX_IMAGE_BYTES * 1.4),   // legacy
+      bannerData:     trimStr(bannerData,      MAX_IMAGE_BYTES * 1.4),   // legacy
       website:        trimStr(website,        200),
       twitter:        trimStr(twitter,        200),
       telegram:       trimStr(telegram,       200),
@@ -147,9 +157,17 @@ export async function POST(req: NextRequest) {
     );
 
     // Return doc without the heavy image data
+    const hasLogo   = !!(logoUrl   || logoData);
+    const hasBanner = !!(bannerUrl || bannerData);
     return NextResponse.json({
       success: true,
-      data: { ...doc, logoData: undefined, bannerData: undefined, hasLogo: !!logoData, hasBanner: !!bannerData },
+      data: {
+        ...doc,
+        logoData:   undefined,
+        bannerData: undefined,
+        hasLogo,
+        hasBanner,
+      },
     }, { status: 201 });
 
   } catch (err) {

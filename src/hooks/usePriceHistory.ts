@@ -10,6 +10,7 @@ export interface PricePoint {
   type: "buy" | "sell" | "init";
   ethVolume: number; // gross ETH in/out (before fee)
   blockNumber: bigint;
+  txHash?: string; // used for deduplication — allows multiple trades per block
 }
 
 // ─── Contract constants — must mirror LaunchPool.sol exactly ─────────────────
@@ -68,6 +69,7 @@ interface SerializedPoint {
   type: "buy" | "sell" | "init";
   ethVolume: number;
   blockNumber: string;
+  txHash?: string;
 }
 
 interface CacheEntry {
@@ -197,6 +199,7 @@ function logToPoint(
     args: Record<string, bigint>;
     blockNumber: bigint;
     type: "buy" | "sell";
+    transactionHash?: string;
   },
   ts: number,
 ): PricePoint | null {
@@ -221,6 +224,7 @@ function logToPoint(
     type: log.type,
     ethVolume: Number(rawVol) / 1e18,
     blockNumber: log.blockNumber,
+    txHash: log.transactionHash,
   };
 }
 
@@ -347,6 +351,7 @@ export function usePriceHistory(poolAddr: `0x${string}` | undefined) {
               args: l.args as Record<string, bigint>,
               blockNumber: l.blockNumber,
               type: l.type,
+              transactionHash: l.transactionHash ?? undefined,
             },
             ts,
           );
@@ -366,14 +371,12 @@ export function usePriceHistory(poolAddr: `0x${string}` | undefined) {
         }
 
         const existingPts = cached ? deserialize(cached.points) : [];
-        const existingKeys = new Set(
-          existingPts.map((p) => `${p.blockNumber}_${p.type}`),
-        );
+        const ptKey = (p: PricePoint) =>
+          p.txHash ? `tx_${p.txHash}` : `${p.blockNumber}_${p.time}_${p.type}`;
+        const existingKeys = new Set(existingPts.map(ptKey));
         const merged = [
           ...existingPts,
-          ...newPts.filter(
-            (p) => !existingKeys.has(`${p.blockNumber}_${p.type}`),
-          ),
+          ...newPts.filter((p) => !existingKeys.has(ptKey(p))),
         ]
           .sort((a, b) => a.time - b.time)
           .slice(-MAX_POINTS);
@@ -421,8 +424,13 @@ export function usePriceHistory(poolAddr: `0x${string}` | undefined) {
 
     function appendPoint(pt: PricePoint) {
       setPoints((prev) => {
-        const key = `${pt.blockNumber}_${pt.type}`;
-        if (prev.some((p) => `${p.blockNumber}_${p.type}` === key)) return prev;
+        const key = pt.txHash
+          ? `tx_${pt.txHash}`
+          : `${pt.blockNumber}_${pt.time}_${pt.type}`;
+        const isDup = prev.some((p) =>
+          p.txHash ? `tx_${p.txHash}` === key : `${p.blockNumber}_${p.time}_${p.type}` === key,
+        );
+        if (isDup) return prev;
 
         const next = [...prev, pt].slice(-MAX_POINTS);
 
@@ -451,7 +459,12 @@ export function usePriceHistory(poolAddr: `0x${string}` | undefined) {
           const args = log.args as Record<string, bigint>;
           const ts = await getTs(log.blockNumber!);
           const pt = logToPoint(
-            { args, blockNumber: log.blockNumber!, type: "buy" },
+            {
+              args,
+              blockNumber: log.blockNumber!,
+              type: "buy",
+              transactionHash: log.transactionHash ?? undefined,
+            },
             ts,
           );
           if (pt) appendPoint(pt);
@@ -468,7 +481,12 @@ export function usePriceHistory(poolAddr: `0x${string}` | undefined) {
           const args = log.args as Record<string, bigint>;
           const ts = await getTs(log.blockNumber!);
           const pt = logToPoint(
-            { args, blockNumber: log.blockNumber!, type: "sell" },
+            {
+              args,
+              blockNumber: log.blockNumber!,
+              type: "sell",
+              transactionHash: log.transactionHash ?? undefined,
+            },
             ts,
           );
           if (pt) appendPoint(pt);

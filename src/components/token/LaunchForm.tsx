@@ -35,8 +35,8 @@ export default function LaunchForm() {
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [description, setDescription] = useState("");
-  const [logoData, setLogoData] = useState("");
-  const [bannerData, setBannerData] = useState("");
+  const [logoUrl, setLogoUrl]     = useState("");
+  const [bannerUrl, setBannerUrl] = useState("");
   const [website, setWebsite] = useState("");
   const [twitter, setTwitter] = useState("");
   const [telegram, setTelegram] = useState("");
@@ -115,8 +115,8 @@ export default function LaunchForm() {
             name: name.trim(),
             symbol: symbol.trim().toUpperCase(),
             description: description.trim(),
-            ...(logoData && { logoData }), // omit empty strings
-            ...(bannerData && { bannerData }),
+            ...(logoUrl   && { logoUrl }),
+            ...(bannerUrl && { bannerUrl }),
             ...(website.trim() && { website: website.trim() }),
             ...(twitter.trim() && { twitter: twitter.trim() }),
             ...(telegram.trim() && { telegram: telegram.trim() }),
@@ -276,14 +276,14 @@ export default function LaunchForm() {
           <GlassCard glow="blue" className="p-5 space-y-5">
             <ImageUpload
               type="logo"
-              value={logoData}
-              onChange={setLogoData}
+              value={logoUrl}
+              onChange={setLogoUrl}
               label="Token Logo"
             />
             <ImageUpload
               type="banner"
-              value={bannerData}
-              onChange={setBannerData}
+              value={bannerUrl}
+              onChange={setBannerUrl}
               label="Banner Image"
             />
           </GlassCard>
@@ -363,9 +363,9 @@ export default function LaunchForm() {
         <div className="space-y-4 animate-fade-in">
           <GlassCard glow="green" className="overflow-hidden">
             <div className="relative w-full h-28">
-              {bannerData ? (
+              {bannerUrl ? (
                 <img
-                  src={bannerData}
+                  src={bannerUrl}
                   alt="banner"
                   className="w-full h-full object-cover"
                 />
@@ -389,9 +389,9 @@ export default function LaunchForm() {
                   className="w-10 h-10 rounded-xl overflow-hidden border-2"
                   style={{ borderColor: "rgba(0,255,135,0.4)" }}
                 >
-                  {logoData ? (
+                  {logoUrl ? (
                     <img
-                      src={logoData}
+                      src={logoUrl}
                       alt="logo"
                       className="w-full h-full object-cover"
                     />

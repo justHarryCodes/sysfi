@@ -3,79 +3,59 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Rocket, LayoutGrid, Wallet, Zap, ExternalLink } from "lucide-react";
-import { useETHPrice } from "@/hooks/useETHPrice";
-import { formatUSD } from "@/lib/utils";
+import { Rocket, Flame, Wallet, ExternalLink, ArrowLeftRight, Users } from "lucide-react";
 import ChainSwitcher from "./ChainSwitcher";
 import { useWallet } from "@/context/WalletContext";
 import Image from "next/image";
 
 const NAV = [
-  { href: "/", label: "Explore", icon: LayoutGrid, color: "blue" },
-  { href: "/launch", label: "Launch", icon: Rocket, color: "green" },
-  { href: "/portfolio", label: "Portfolio", icon: Wallet, color: "blue" },
+  { href: "/dao",       label: "DAO",        icon: Users,          color: "blue"  },
+  { href: "/",          label: "Meme Rush",  icon: Flame,          color: "green" },
+  { href: "/swap",      label: "Swap",       icon: ArrowLeftRight, color: "green" },
+  { href: "/launch",    label: "Launch",     icon: Rocket,         color: "green" },
+  { href: "/portfolio", label: "Portfolio",  icon: Wallet,         color: "blue"  },
 ] as const;
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const router = useRouter();
+  const router   = useRouter();
   const { chainMeta } = useWallet();
 
-  useEffect(() => {
-    NAV.forEach((n) => router.prefetch(n.href));
-  }, [router]);
+  useEffect(() => { NAV.forEach((n) => router.prefetch(n.href)); }, [router]);
 
   return (
     <aside
-      className="hidden lg:flex flex-col fixed left-0 top-8 bottom-0 w-56 z-30"
+      className="hidden lg:flex flex-col fixed left-0 top-8 bottom-0 w-72 z-30"
       style={{
-        background: "rgba(6,6,17,0.95)",
-        borderRight: "1px solid rgba(0,212,255,0.08)",
+        background:     "var(--bg-nav)",
+        borderRight:    "1px solid var(--border-1)",
         backdropFilter: "blur(20px)",
+        boxShadow:      "var(--shadow-nav)",
       }}
     >
       {/* Logo */}
-      <div
-        className="px-5 py-5 border-b"
-        style={{ borderColor: "rgba(0,212,255,0.08)" }}
-      >
+      <div className="px-5 py-5" style={{ borderBottom: "1px solid var(--border-1)" }}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
-            <Image
-              src="/logo.png"
-              alt="LaunchPad Logo"
-              width={32}
-              height={32}
-              className="object-contain"
-              priority
-            />
+            <Image src="/logo.png" alt="Sysfi" width={32} height={32} className="object-contain" priority />
           </div>
-          <div>
-            <p className="font-display font-bold text-sm tracking-wide text-text-primary">
-              Sysfi
-            </p>
-          </div>
+          <p className="font-display font-bold text-sm tracking-wide text-text-primary">Sysfi</p>
         </div>
       </div>
 
       {/* Chain switcher */}
-      <div
-        className="px-3 py-3 border-b"
-        style={{ borderColor: "rgba(0,212,255,0.06)" }}
-      >
-        <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-2">
-          Network
-        </p>
+      <div className="px-3 py-3" style={{ borderBottom: "1px solid var(--border-1)" }}>
+        <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-2">Network</p>
         <ChainSwitcher />
       </div>
 
-      {/* Navigation */}
+      {/* Nav links */}
       <nav className="flex-1 px-3 py-4 space-y-1">
         {NAV.map(({ href, label, icon: Icon, color }) => {
-          const isActive =
-            pathname === href || (href !== "/" && pathname.startsWith(href));
-          const neonColor =
-            color === "green" ? "var(--neon-green)" : "var(--neon-blue)";
+          const isActive    = pathname === href || (href !== "/" && pathname.startsWith(href));
+          const neonColor   = color === "green" ? "var(--neon-green)" : "var(--neon-blue)";
+          const activeBg    = color === "green" ? "var(--bg-input-g)" : "var(--bg-input)";
+          const activeBorder= color === "green" ? "var(--border-g2)"  : "var(--border-2)";
 
           return (
             <Link
@@ -85,46 +65,28 @@ export default function Sidebar() {
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150"
               style={
                 isActive
-                  ? {
-                      background:
-                        color === "green"
-                          ? "rgba(0,255,135,0.08)"
-                          : "rgba(0,212,255,0.08)",
-                      border: `1px solid ${color === "green" ? "rgba(0,255,135,0.2)" : "rgba(0,212,255,0.2)"}`,
-                    }
-                  : {
-                      background: "transparent",
-                      border: "1px solid transparent",
-                    }
+                  ? { background: activeBg, border: `1px solid ${activeBorder}` }
+                  : { background: "transparent", border: "1px solid transparent" }
               }
             >
               <Icon
                 size={18}
                 style={{
-                  color: isActive ? neonColor : "#64748b",
-                  filter: isActive
-                    ? `drop-shadow(0 0 6px ${neonColor})`
-                    : "none",
+                  color:  isActive ? neonColor : "var(--c-text-2)",
+                  filter: isActive ? `drop-shadow(0 0 6px ${neonColor})` : "none",
                   transition: "all 0.15s",
                 }}
               />
               <span
                 className="text-sm font-medium"
-                style={{
-                  color: isActive ? neonColor : "#64748b",
-                  fontFamily: "'Outfit', sans-serif",
-                  textShadow: isActive ? `0 0 10px ${neonColor}40` : "none",
-                }}
+                style={{ color: isActive ? neonColor : "var(--c-text-2)", fontFamily: "'Outfit', sans-serif" }}
               >
                 {label}
               </span>
               {isActive && (
                 <div
                   className="ml-auto w-1.5 h-1.5 rounded-full"
-                  style={{
-                    background: neonColor,
-                    boxShadow: `0 0 6px ${neonColor}`,
-                  }}
+                  style={{ background: neonColor, boxShadow: `0 0 6px ${neonColor}` }}
                 />
               )}
             </Link>
@@ -132,11 +94,8 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Explorer link */}
-      <div
-        className="px-4 py-3 border-t"
-        style={{ borderColor: "rgba(0,212,255,0.08)" }}
-      >
+      {/* Explorer */}
+      <div className="px-4 py-3" style={{ borderTop: "1px solid var(--border-1)" }}>
         <a
           href={chainMeta.explorerUrl}
           target="_blank"
@@ -146,9 +105,7 @@ export default function Sidebar() {
           <ExternalLink size={11} />
           <span className="font-mono truncate">{chainMeta.explorerName}</span>
         </a>
-        <p className="text-[10px] font-mono text-text-muted mt-1">
-          Chain {chainMeta.chain.id}
-        </p>
+        <p className="text-[10px] font-mono text-text-muted mt-1">Chain {chainMeta.chain.id}</p>
       </div>
     </aside>
   );

@@ -19,6 +19,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { hasPG, query } from "@/lib/postgres";
 import { getDb, METADATA_COL } from "@/lib/mongodb";
 import { SUPPORTED_CHAIN_IDS, CHAIN_META } from "@/lib/chains";
+import { getTokenList as getCuratedTokens } from "@/lib/tokenLists";
 
 // ─── Uniswap Token List types (https://tokenlists.org) ────────────────────────
 
@@ -147,7 +148,10 @@ export async function GET(req: NextRequest) {
               hasLogo: {
                 $cond: [
                   {
-                    $gt: [{ $strLenBytes: { $ifNull: ["$logoData", ""] } }, 0],
+                    $or: [
+                      { $gt: [{ $strLenBytes: { $ifNull: ["$logoData", ""] } }, 0] },
+                      { $gt: [{ $strLenBytes: { $ifNull: ["$logoUrl",  ""] } }, 0] },
+                    ],
                   },
                   true,
                   false,
@@ -202,7 +206,32 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── 3. Build the Token List document ───────────────────────────────────────
+  // ── 3. Include curated swap tokens from tokenlist/tokens/ ─────────────────
+  // These are well-known ERC-20s (Uniswap default list) for each chain.
+  // Mark them with a "curated" tag so consumers can distinguish them from
+  // launchpad-launched tokens.
+  const seenAddresses = new Set(
+    tokens.map((t) => `${t.chainId}:${t.address.toLowerCase()}`)
+  );
+  for (const cid of targetChains) {
+    const curated = getCuratedTokens(cid);
+    for (const t of curated) {
+      const key = `${t.chainId}:${t.address.toLowerCase()}`;
+      if (seenAddresses.has(key)) continue;
+      seenAddresses.add(key);
+      tokens.push({
+        chainId:  t.chainId,
+        address:  toChecksumAddress(t.address),
+        name:     t.name,
+        symbol:   t.symbol,
+        decimals: t.decimals,
+        logoURI:  t.logoURI,
+        tags:     ["curated"],
+      });
+    }
+  }
+
+  // ── 4. Build the Token List document ───────────────────────────────────────
   const chainName = chainId
     ? (CHAIN_META[chainId]?.chain.name ?? "Multi-Chain")
     : "Multi-Chain";

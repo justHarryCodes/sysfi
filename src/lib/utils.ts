@@ -19,10 +19,10 @@ export function formatETH(wei: bigint, decimals = 4): string {
 
 export function formatTokenAmount(wei: bigint, decimals = 2): string {
   const n = Number(wei) / 1e18;
-  if (n >= 1e9) return (n / 1e9).toFixed(2)  + "B";
-  if (n >= 1e6) return (n / 1e6).toFixed(2)  + "M";
-  if (n >= 1e3) return (n / 1e3).toFixed(2)  + "K";
-  return n.toFixed(decimals);
+  if (n >= 1e9) return (n / 1e9).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "B";
+  if (n >= 1e6) return (n / 1e6).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "M";
+  if (n >= 1e3) return (n / 1e3).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "K";
+  return n.toLocaleString("en-US", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
 export function formatPrice(wei: bigint): string {
@@ -30,7 +30,8 @@ export function formatPrice(wei: bigint): string {
   if (p === 0) return "0";
   if (p < 1e-9) return p.toExponential(2);
   if (p < 0.001) return p.toPrecision(3);
-  return p.toFixed(6);
+  if (p >= 1000) return p.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  return p.toFixed(4);
 }
 
 // ─── USD formatters ───────────────────────────────────────────────────────────
@@ -43,13 +44,22 @@ export function weiToUSD(wei: bigint, ethUSD: number): number {
 /** Format a USD number nicely */
 export function formatUSD(usd: number): string {
   if (!isFinite(usd) || usd === 0) return "$0.00";
-  if (usd >= 1e9)  return "$" + (usd / 1e9).toFixed(2)  + "B";
-  if (usd >= 1e6)  return "$" + (usd / 1e6).toFixed(2)  + "M";
-  if (usd >= 1e3)  return "$" + (usd / 1e3).toFixed(2)  + "K";
-  if (usd >= 1)    return "$" + usd.toFixed(2);
+  if (usd >= 1e9)  return "$" + (usd / 1e9).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "B";
+  if (usd >= 1e6)  return "$" + (usd / 1e6).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "M";
+  if (usd >= 1)    return "$" + usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   if (usd >= 0.01) return "$" + usd.toFixed(4);
-  if (usd >= 1e-6) return "$" + usd.toFixed(8);
+  if (usd >= 1e-6) return "$" + usd.toFixed(6);
   return "<$0.000001";
+}
+
+/** Format a raw crypto price (number, not wei) for display — 4 decimal places with comma thousands */
+export function formatCryptoPrice(price: number): string {
+  if (!isFinite(price) || price <= 0) return "$0.0000";
+  if (price < 0.000001) return "<$0.000001";
+  if (price < 0.0001)   return "$" + price.toFixed(6);
+  if (price >= 1)
+    return "$" + price.toLocaleString("en-US", { minimumFractionDigits: 4, maximumFractionDigits: 4 });
+  return "$" + price.toFixed(4);
 }
 
 /** Full dual display: "0.000002 ETH ($0.0064)" */

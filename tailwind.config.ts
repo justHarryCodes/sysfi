@@ -9,25 +9,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Backgrounds
-        "bg-base": "#060611",
-        "bg-surface": "#0d0d1f",
-        "bg-card": "#10102a",
+        // Backgrounds — CSS variable references (theme-aware)
+        "bg-base":    "var(--bg-base)",
+        "bg-surface": "var(--bg-surface)",
+        "bg-card":    "var(--bg-card)",
         // Neon accents
-        "neon-green": "#00ff87",
-        "neon-blue": "#00d4ff",
-        "neon-purple": "#7b2fff",
-        "neon-pink": "#ff2d78",
-        // Semantic
-        "green-dim": "#00ff8730",
-        "blue-dim": "#00d4ff30",
+        "neon-green":  "var(--neon-green)",
+        "neon-blue":   "var(--neon-blue)",
+        "neon-purple": "var(--neon-purple)",
+        "neon-pink":   "#ff2d78",
         // Text
-        "text-primary": "#e2e8f0",
-        "text-secondary": "#64748b",
-        "text-muted": "#334155",
+        "text-primary":   "var(--c-text-1)",
+        "text-secondary": "var(--c-text-2)",
+        "text-muted":     "var(--c-text-3)",
         // Border
-        "border-glass": "rgba(0,212,255,0.12)",
-        "border-green": "rgba(0,255,135,0.2)",
+        "border-glass": "var(--border-1)",
+        "border-green": "var(--border-g2)",
       },
       fontFamily: {
         display: ["'Exo 2'", "sans-serif"],

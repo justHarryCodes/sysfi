@@ -104,8 +104,12 @@ const nextConfig = {
     remotePatterns: [
       { protocol: "https", hostname: "assets.coingecko.com" },
       { protocol: "https", hostname: "coin-images.coingecko.com" },
+      { protocol: "https", hostname: "raw.githubusercontent.com" },
+      { protocol: "https", hostname: "res.cloudinary.com" },
     ],
   },
+
+  serverExternalPackages: ["mongodb"],
 
   // Cache headers for OG images and the token list endpoint
   async headers() {

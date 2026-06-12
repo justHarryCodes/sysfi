@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Providers from "@/providers";
 import Layout from "@/components/layout/Layout";
+import { ThemeProvider } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: {
@@ -73,11 +74,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <body>
-        <Providers>
-          <Layout>{children}</Layout>
-        </Providers>
+        <ThemeProvider>
+          <Providers>
+            <Layout>{children}</Layout>
+          </Providers>
+        </ThemeProvider>
       </body>
     </html>
   );

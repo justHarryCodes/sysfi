@@ -1,33 +1,35 @@
-// ─── Cloudinary unsigned upload ───────────────────────────────────────────────
-//
-// Setup:
-//  1. Create account at https://cloudinary.com (free tier is plenty)
-//  2. Dashboard → Settings → Upload → "Add upload preset" → set to Unsigned
-//  3. Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
-//
+/**
+ * Cloudinary upload helper.
+ * Files are sent to /api/images/upload (our signed server route).
+ * The API secret never touches the browser.
+ */
 
-export type UploadType = "logo" | "banner";
+export type UploadType = "logo" | "banner" | "dao" | "token" | "general";
 
 export interface CloudinaryResult {
-  url:       string;  // https CDN URL
-  publicId:  string;
-  width:     number;
-  height:    number;
+  url:      string;
+  publicId: string;
+  width:    number;
+  height:   number;
+  format?:  string;
 }
 
-const CLOUD  = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME   ?? "";
-const PRESET = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET ?? "";
-
-/** Max file sizes */
+/** Max file sizes shown in UI validation (server enforces the same) */
 const MAX_BYTES: Record<UploadType, number> = {
-  logo:   2 * 1024 * 1024,   // 2 MB
-  banner: 5 * 1024 * 1024,   // 5 MB
+  logo:    2 * 1024 * 1024,
+  banner:  5 * 1024 * 1024,
+  dao:     5 * 1024 * 1024,
+  token:   2 * 1024 * 1024,
+  general: 10 * 1024 * 1024,
 };
 
-/** Recommended dimensions (shown in UI) */
+/** Recommended dimensions for UI hints */
 export const RECOMMENDED: Record<UploadType, string> = {
-  logo:   "400×400 px, square",
-  banner: "1200×400 px, 3:1 ratio",
+  logo:    "400×400 px, square",
+  banner:  "1200×400 px, 3:1 ratio",
+  dao:     "400×400 px, square",
+  token:   "200×200 px, square",
+  general: "Any size",
 };
 
 export function validateImage(file: File, type: UploadType): string | null {
@@ -37,49 +39,43 @@ export function validateImage(file: File, type: UploadType): string | null {
   return null;
 }
 
+/**
+ * Upload an image via our signed server route.
+ * Works in both browser and server contexts.
+ */
 export async function uploadToCloudinary(
   file:   File,
-  type:   UploadType,
-  folder: string = "launchpad"
+  type:   UploadType = "general",
+  folder: string = "launchpad",
 ): Promise<CloudinaryResult> {
-  if (!CLOUD || !PRESET) {
-    throw new Error(
-      "Cloudinary not configured — set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME and NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET in .env.local"
-    );
-  }
-
   const error = validateImage(file, type);
   if (error) throw new Error(error);
 
   const form = new FormData();
-  form.append("file",           file);
-  form.append("upload_preset",  PRESET);
-  form.append("folder",         `${folder}/${type}s`);
-  // Enforce dimensions server-side
-  if (type === "logo")   form.append("transformation", "w_400,h_400,c_fill,g_auto");
-  if (type === "banner") form.append("transformation", "w_1200,h_400,c_fill,g_auto");
+  form.append("file",   file);
+  form.append("type",   type);
+  form.append("folder", folder);
 
-  const res = await fetch(
-    `https://api.cloudinary.com/v1_1/${CLOUD}/image/upload`,
-    { method: "POST", body: form }
-  );
+  const res = await fetch("/api/images/upload", { method: "POST", body: form });
+  const data = await res.json();
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message ?? `Upload failed (${res.status})`);
+  if (!res.ok || !data.success) {
+    throw new Error(data.error ?? `Upload failed (${res.status})`);
   }
 
-  const data = await res.json();
   return {
-    url:      data.secure_url,
-    publicId: data.public_id,
+    url:      data.url,
+    publicId: data.publicId,
     width:    data.width,
     height:   data.height,
+    format:   data.format,
   };
 }
 
+/** Always true now — credentials are server-side env vars */
 export function isCloudinaryConfigured(): boolean {
-  return !!(CLOUD && PRESET &&
-    CLOUD  !== "your_cloud_name" &&
-    PRESET !== "your_unsigned_preset");
+  return !!(
+    process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+    typeof window !== "undefined"
+  );
 }

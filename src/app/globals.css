@@ -4,28 +4,101 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
+/* ═══════════════════════════════════════════════════════════════
+   DARK THEME (default)
+   ═══════════════════════════════════════════════════════════════ */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-base:    #060611;
+  --bg-surface: #0d0d1f;
+  --bg-card:    #10102a;
+  --bg-glass:   rgba(10,10,26,0.9);
+  --bg-nav:     rgba(6,6,17,0.96);
+  --bg-modal:   rgba(10,10,26,0.97);
+  --bg-input:   rgba(0,212,255,0.04);
+  --bg-input-g: rgba(0,255,135,0.04);
+
+  --border-1:   rgba(0,212,255,0.08);
+  --border-2:   rgba(0,212,255,0.18);
+  --border-3:   rgba(0,212,255,0.42);
+  --border-g1:  rgba(0,255,135,0.10);
+  --border-g2:  rgba(0,255,135,0.28);
+  --border-g3:  rgba(0,255,135,0.45);
+
+  --c-text-1:   #e2e8f0;
+  --c-text-2:   #64748b;
+  --c-text-3:   #334155;
+
   --neon-green:  #00ff87;
   --neon-blue:   #00d4ff;
   --neon-purple: #7b2fff;
-  --bg-base:     #060611;
-  --bg-surface:  #0d0d1f;
-  --bg-card:     #10102a;
+
+  --shadow-card:  0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03);
+  --shadow-hover: 0 8px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.05);
+  --shadow-nav:   none;
+  --overlay:      rgba(6,6,17,0.85);
+
+  --blob-blue:         rgba(0,212,255,0.08);
+  --blob-green:        rgba(0,255,135,0.08);
+  --banner-grid-color: rgba(0,212,255,0.15);
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   LIGHT THEME
+   ═══════════════════════════════════════════════════════════════ */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-base:    #eef1ff;
+  --bg-surface: #f5f7ff;
+  --bg-card:    #ffffff;
+  --bg-glass:   rgba(255,255,255,0.95);
+  --bg-nav:     rgba(255,255,255,0.97);
+  --bg-modal:   rgba(255,255,255,0.99);
+  --bg-input:   rgba(0,112,200,0.05);
+  --bg-input-g: rgba(0,122,71,0.05);
+
+  --border-1:   rgba(0,112,200,0.12);
+  --border-2:   rgba(0,112,200,0.25);
+  --border-3:   rgba(0,112,200,0.55);
+  --border-g1:  rgba(0,122,71,0.14);
+  --border-g2:  rgba(0,122,71,0.30);
+  --border-g3:  rgba(0,122,71,0.55);
+
+  --c-text-1:   #0f172a;
+  --c-text-2:   #475569;
+  --c-text-3:   #94a3b8;
+
+  --neon-green:  #007a47;
+  --neon-blue:   #0070c0;
+  --neon-purple: #5b21b6;
+
+  --shadow-card:  0 2px 14px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-hover: 0 8px 28px rgba(0,0,0,0.11), 0 2px 8px rgba(0,0,0,0.06);
+  --shadow-nav:   0 1px 16px rgba(0,0,0,0.08);
+  --overlay:      rgba(15,23,42,0.5);
+
+  --blob-blue:         rgba(0,112,200,0.06);
+  --blob-green:        rgba(0,122,71,0.05);
+  --banner-grid-color: rgba(0,112,200,0.18);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE
+   ═══════════════════════════════════════════════════════════════ */
 * { box-sizing: border-box; }
 
-html {
-  scroll-behavior: smooth;
-  color-scheme: dark;
-}
+html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--bg-base);
-  color: #e2e8f0;
+  color: var(--c-text-1);
   font-family: 'Outfit', sans-serif;
   overflow-x: hidden;
   min-height: 100vh;
+  transition: background-color 0.25s ease, color 0.2s ease;
 }
 
 /* ── Scrollbar ─────────────────────────────────────────────── */
@@ -38,123 +111,112 @@ body {
 
 /* ── Selection ─────────────────────────────────────────────── */
 ::selection {
-  background: rgba(0, 212, 255, 0.2);
+  background: var(--border-2);
   color: var(--neon-blue);
 }
 
-/* ── Glass card utility ────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   COMPONENT UTILITIES
+   ═══════════════════════════════════════════════════════════════ */
 @layer components {
+
   .glass {
-    background: rgba(13, 13, 31, 0.7);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(0, 212, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    background: var(--bg-glass);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--border-1);
+    box-shadow: var(--shadow-card);
+    transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
   }
 
   .glass-green {
-    background: rgba(0, 255, 135, 0.04);
+    background: var(--bg-input-g);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 255, 135, 0.15);
-    box-shadow: 0 0 30px rgba(0, 255, 135, 0.06),
-                inset 0 1px 0 rgba(0, 255, 135, 0.08);
+    border: 1px solid var(--border-g1);
+    box-shadow: var(--shadow-card);
+    transition: background 0.25s ease, border-color 0.25s ease;
   }
 
   .glass-blue {
-    background: rgba(0, 212, 255, 0.04);
+    background: var(--bg-input);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(0, 212, 255, 0.15);
-    box-shadow: 0 0 30px rgba(0, 212, 255, 0.06),
-                inset 0 1px 0 rgba(0, 212, 255, 0.08);
+    border: 1px solid var(--border-1);
+    box-shadow: var(--shadow-card);
+    transition: background 0.25s ease, border-color 0.25s ease;
   }
 
-  .neon-text-green {
-    color: var(--neon-green);
-    text-shadow: 0 0 10px rgba(0, 255, 135, 0.5),
-                 0 0 30px rgba(0, 255, 135, 0.2);
-  }
-
-  .neon-text-blue {
-    color: var(--neon-blue);
-    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5),
-                 0 0 30px rgba(0, 212, 255, 0.2);
-  }
+  .neon-text-green { color: var(--neon-green); }
+  .neon-text-blue  { color: var(--neon-blue); }
 
   .neon-border-green {
-    border-color: rgba(0, 255, 135, 0.4);
-    box-shadow: 0 0 10px rgba(0, 255, 135, 0.2),
-                inset 0 0 10px rgba(0, 255, 135, 0.05);
+    border-color: var(--border-g3);
+    box-shadow: 0 0 10px var(--border-g2), inset 0 0 10px var(--border-g1);
   }
-
   .neon-border-blue {
-    border-color: rgba(0, 212, 255, 0.4);
-    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2),
-                inset 0 0 10px rgba(0, 212, 255, 0.05);
+    border-color: var(--border-3);
+    box-shadow: 0 0 10px var(--border-2), inset 0 0 10px var(--border-1);
   }
 
   .btn-neon-green {
-    background: linear-gradient(135deg, rgba(0,255,135,0.15), rgba(0,255,135,0.05));
-    border: 1px solid rgba(0, 255, 135, 0.5);
+    background: linear-gradient(135deg, var(--bg-input-g), transparent);
+    border: 1px solid var(--border-g3);
     color: var(--neon-green);
     transition: all 0.2s ease;
   }
   .btn-neon-green:hover {
-    background: linear-gradient(135deg, rgba(0,255,135,0.25), rgba(0,255,135,0.1));
-    box-shadow: 0 0 20px rgba(0,255,135,0.4), 0 0 40px rgba(0,255,135,0.1);
+    background: linear-gradient(135deg, var(--border-g2), var(--bg-input-g));
+    box-shadow: 0 0 20px var(--border-g2);
     transform: translateY(-1px);
   }
   .btn-neon-green:active { transform: translateY(0); }
 
   .btn-neon-blue {
-    background: linear-gradient(135deg, rgba(0,212,255,0.15), rgba(0,212,255,0.05));
-    border: 1px solid rgba(0, 212, 255, 0.5);
+    background: linear-gradient(135deg, var(--bg-input), transparent);
+    border: 1px solid var(--border-3);
     color: var(--neon-blue);
     transition: all 0.2s ease;
   }
   .btn-neon-blue:hover {
-    background: linear-gradient(135deg, rgba(0,212,255,0.25), rgba(0,212,255,0.1));
-    box-shadow: 0 0 20px rgba(0,212,255,0.4), 0 0 40px rgba(0,212,255,0.1);
+    background: linear-gradient(135deg, var(--border-2), var(--bg-input));
+    box-shadow: 0 0 20px var(--border-2);
     transform: translateY(-1px);
   }
 
   .btn-solid-green {
     background: var(--neon-green);
-    color: #060611;
+    color: var(--bg-base);
     font-weight: 700;
+    border: 1px solid var(--neon-green);
     transition: all 0.2s ease;
   }
   .btn-solid-green:hover {
-    box-shadow: 0 0 25px rgba(0,255,135,0.5), 0 0 50px rgba(0,255,135,0.2);
+    box-shadow: 0 0 25px var(--border-g3), 0 0 50px var(--border-g1);
     transform: translateY(-1px);
   }
 
   .input-glass {
-    background: rgba(6, 6, 17, 0.6);
-    border: 1px solid rgba(0, 212, 255, 0.12);
-    color: #e2e8f0;
+    background: var(--bg-input);
+    border: 1px solid var(--border-1);
+    color: var(--c-text-1);
     transition: border-color 0.2s, box-shadow 0.2s;
     outline: none;
   }
   .input-glass:focus {
-    border-color: rgba(0, 212, 255, 0.4);
-    box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.08),
-                0 0 15px rgba(0, 212, 255, 0.1);
+    border-color: var(--border-3);
+    box-shadow: 0 0 0 2px var(--border-1), 0 0 15px var(--border-2);
   }
-  .input-glass::placeholder { color: #334155; }
+  .input-glass::placeholder { color: var(--c-text-3); }
 
   .tab-active {
     color: var(--neon-green);
     border-bottom: 2px solid var(--neon-green);
-    text-shadow: 0 0 10px rgba(0, 255, 135, 0.4);
   }
 
   .progress-neon {
     background: linear-gradient(90deg, var(--neon-blue), var(--neon-green));
-    box-shadow: 0 0 10px rgba(0, 255, 135, 0.4);
+    box-shadow: 0 0 10px var(--border-g2);
   }
 
-  /* Scan line overlay effect */
   .scanlines::after {
     content: "";
     position: absolute;
@@ -163,25 +225,23 @@ body {
       0deg,
       transparent,
       transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px,
-      rgba(0, 0, 0, 0.03) 4px
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
     );
     pointer-events: none;
     border-radius: inherit;
   }
 }
 
-/* ── Ticker animation (pause on hover) ─────────────────────── */
-.ticker-wrap:hover .ticker-inner {
-  animation-play-state: paused;
-}
+/* ── Ticker ────────────────────────────────────────────────── */
+.ticker-wrap:hover .ticker-inner { animation-play-state: paused; }
 
-/* ── RainbowKit overrides ───────────────────────────────────── */
+/* ── RainbowKit overrides ──────────────────────────────────── */
 [data-rk] {
-  --rk-colors-accentColor: var(--neon-blue) !important;
-  --rk-colors-accentColorForeground: #060611 !important;
-  --rk-colors-modalBackground: #0d0d1f !important;
-  --rk-colors-modalBorder: rgba(0,212,255,0.15) !important;
-  --rk-colors-menuItemBackground: rgba(0,212,255,0.05) !important;
-  --rk-fonts-body: 'Outfit', sans-serif !important;
+  --rk-colors-accentColor:           var(--neon-blue)   !important;
+  --rk-colors-accentColorForeground: var(--bg-base)     !important;
+  --rk-colors-modalBackground:       var(--bg-surface)  !important;
+  --rk-colors-modalBorder:           var(--border-2)    !important;
+  --rk-colors-menuItemBackground:    var(--bg-input)    !important;
+  --rk-fonts-body:                   'Outfit', sans-serif !important;
 }

@@ -21,19 +21,19 @@ export default function GlassCard({
 }: GlassCardProps) {
   const glowStyles: Record<string, React.CSSProperties> = {
     green: {
-      background:  "rgba(0,255,135,0.03)",
-      border:      "1px solid rgba(0,255,135,0.12)",
-      boxShadow:   "0 8px 32px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,135,0.05), inset 0 1px 0 rgba(0,255,135,0.06)",
+      background:  "var(--bg-input-g)",
+      border:      "1px solid var(--border-g1)",
+      boxShadow:   "var(--shadow-card)",
     },
     blue: {
-      background:  "rgba(0,212,255,0.03)",
-      border:      "1px solid rgba(0,212,255,0.12)",
-      boxShadow:   "0 8px 32px rgba(0,0,0,0.5), 0 0 30px rgba(0,212,255,0.05), inset 0 1px 0 rgba(0,212,255,0.06)",
+      background:  "var(--bg-input)",
+      border:      "1px solid var(--border-1)",
+      boxShadow:   "var(--shadow-card)",
     },
     none: {
-      background:  "rgba(13,13,31,0.7)",
-      border:      "1px solid rgba(0,212,255,0.08)",
-      boxShadow:   "0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)",
+      background:  "var(--bg-glass)",
+      border:      "1px solid var(--border-1)",
+      boxShadow:   "var(--shadow-card)",
     },
   };
 
@@ -44,7 +44,7 @@ export default function GlassCard({
         "rounded-2xl backdrop-blur-xl transition-all duration-300",
         hover && "hover:scale-[1.01] cursor-pointer",
         onClick && "cursor-pointer",
-        className
+        className,
       )}
       style={glowStyles[glow]}
     >

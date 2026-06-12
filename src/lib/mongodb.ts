@@ -61,8 +61,10 @@ export interface MetadataDoc {
   name:           string;
   symbol:         string;
   description:    string;
-  logoData:       string;   // base64 JPEG data URL — "" if not set
-  bannerData:     string;   // base64 JPEG data URL — "" if not set
+  logoUrl:        string;   // Cloudinary CDN URL — preferred
+  bannerUrl:      string;   // Cloudinary CDN URL — preferred
+  logoData:       string;   // base64 JPEG data URL — legacy fallback
+  bannerData:     string;   // base64 JPEG data URL — legacy fallback
   website:        string;
   twitter:        string;
   telegram:       string;

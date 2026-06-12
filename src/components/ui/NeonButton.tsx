@@ -15,33 +15,42 @@ const sizeClasses = {
   lg: "px-7 py-3.5 text-base rounded-xl",
 };
 
-const variantStyles: Record<string, React.CSSProperties> = {
-  green: {
-    background: "linear-gradient(135deg, rgba(0,255,135,0.1), rgba(0,255,135,0.04))",
-    border:     "1px solid rgba(0,255,135,0.4)",
-    color:      "#00ff87",
-  },
-  blue: {
-    background: "linear-gradient(135deg, rgba(0,212,255,0.1), rgba(0,212,255,0.04))",
-    border:     "1px solid rgba(0,212,255,0.4)",
-    color:      "#00d4ff",
-  },
-  "solid-green": {
-    background: "#00ff87",
-    border:     "1px solid #00ff87",
-    color:      "#060611",
-  },
-  "solid-blue": {
-    background: "#00d4ff",
-    border:     "1px solid #00d4ff",
-    color:      "#060611",
-  },
-  ghost: {
-    background: "transparent",
-    border:     "1px solid rgba(255,255,255,0.08)",
-    color:      "#64748b",
-  },
-};
+function getVariantStyle(variant: string): React.CSSProperties {
+  switch (variant) {
+    case "green":
+      return {
+        background: "linear-gradient(135deg, var(--bg-input-g), transparent)",
+        border:     "1px solid var(--border-g3)",
+        color:      "var(--neon-green)",
+      };
+    case "blue":
+      return {
+        background: "linear-gradient(135deg, var(--bg-input), transparent)",
+        border:     "1px solid var(--border-3)",
+        color:      "var(--neon-blue)",
+      };
+    case "solid-green":
+      return {
+        background: "var(--neon-green)",
+        border:     "1px solid var(--neon-green)",
+        color:      "var(--bg-base)",
+      };
+    case "solid-blue":
+      return {
+        background: "var(--neon-blue)",
+        border:     "1px solid var(--neon-blue)",
+        color:      "var(--bg-base)",
+      };
+    case "ghost":
+      return {
+        background: "transparent",
+        border:     "1px solid var(--border-1)",
+        color:      "var(--c-text-2)",
+      };
+    default:
+      return {};
+  }
+}
 
 export default function NeonButton({
   variant  = "blue",
@@ -64,25 +73,16 @@ export default function NeonButton({
         sizeClasses[size],
         isDisabled && "opacity-40 cursor-not-allowed !transform-none",
         !isDisabled && "hover:-translate-y-0.5",
-        className
+        className,
       )}
-      style={{
-        ...variantStyles[variant],
-        ...(isDisabled ? {} : {
-          textShadow: variant === "green" || variant === "solid-green"
-            ? "0 0 10px rgba(0,255,135,0.3)"
-            : variant === "blue" || variant === "solid-blue"
-              ? "0 0 10px rgba(0,212,255,0.3)"
-              : "none",
-        }),
-      }}
+      style={getVariantStyle(variant)}
       onMouseEnter={(e) => {
         if (isDisabled) return;
         const glow = variant.includes("green")
-          ? "0 0 20px rgba(0,255,135,0.4), 0 0 40px rgba(0,255,135,0.1)"
+          ? "0 0 20px var(--border-g2), 0 0 40px var(--border-g1)"
           : variant.includes("blue")
-            ? "0 0 20px rgba(0,212,255,0.4), 0 0 40px rgba(0,212,255,0.1)"
-            : "none";
+          ? "0 0 20px var(--border-2), 0 0 40px var(--border-1)"
+          : "none";
         (e.currentTarget as HTMLButtonElement).style.boxShadow = glow;
       }}
       onMouseLeave={(e) => {

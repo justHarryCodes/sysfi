@@ -583,7 +583,7 @@ export default function PriceChart({
         )}
 
         {/* Empty state */}
-        {!loading && candles.length < 2 && (
+        {!loading && candles.length === 0 && (
           <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl">
             <div
               className="w-10 h-10 rounded-full flex items-center justify-center"
@@ -612,7 +612,7 @@ export default function PriceChart({
           style={{
             height: "380px",
             width: "100%",
-            opacity: candles.length < 2 ? 0 : 1,
+            opacity: candles.length === 0 ? 0 : 1,
           }}
         />
       </div>

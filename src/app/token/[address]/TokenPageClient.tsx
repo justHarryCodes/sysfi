@@ -10,10 +10,12 @@ import {
   Send,
   Share2,
   Check,
+  Users,
+  ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
-import { useChainId } from "wagmi";
+import { useChainId, useAccount } from "wagmi";
 import { useState } from "react";
 
 import TradePanel from "@/components/token/TradePanel";
@@ -36,6 +38,88 @@ import { ERC20_ABI } from "@/lib/contracts";
 
 function calcFDV(priceWei: bigint, ethUSD: number): string {
   return formatUSD((Number(priceWei) / 1e18) * 1_000_000_000 * ethUSD);
+}
+
+// ─── Creator-only DAO launch banner ──────────────────────────────────────────
+function LaunchDAOBanner({
+  tokenAddr,
+  symbol,
+}: {
+  tokenAddr: string;
+  symbol: string;
+}) {
+  const href = `/dao/create?tokenAddress=${tokenAddr}`;
+
+  return (
+    <Link
+      href={href}
+      className="group block rounded-2xl p-5 transition-all duration-200"
+      style={{
+        background:
+          "linear-gradient(135deg, rgba(123,47,255,0.08) 0%, rgba(0,212,255,0.06) 100%)",
+        border: "1px solid rgba(123,47,255,0.25)",
+      }}
+      onMouseEnter={(e) => {
+        (e.currentTarget as HTMLAnchorElement).style.borderColor =
+          "rgba(123,47,255,0.5)";
+        (e.currentTarget as HTMLAnchorElement).style.boxShadow =
+          "0 0 28px rgba(123,47,255,0.12)";
+      }}
+      onMouseLeave={(e) => {
+        (e.currentTarget as HTMLAnchorElement).style.borderColor =
+          "rgba(123,47,255,0.25)";
+        (e.currentTarget as HTMLAnchorElement).style.boxShadow = "none";
+      }}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-3">
+          {/* Icon */}
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+            style={{
+              background: "rgba(123,47,255,0.15)",
+              border: "1px solid rgba(123,47,255,0.3)",
+            }}
+          >
+            <Users size={18} style={{ color: "var(--neon-purple)" }} />
+          </div>
+
+          <div>
+            <p
+              className="text-sm font-semibold mb-1"
+              style={{ color: "#e2e8f0", fontFamily: "'Outfit', sans-serif" }}
+            >
+              Launch a DAO for{" "}
+              <span style={{ color: "var(--neon-purple)" }}>${symbol}</span>
+            </p>
+            <p className="text-xs leading-relaxed" style={{ color: "#64748b" }}>
+              Make ${symbol} a governance token. Build a decentralized community
+              where holders vote on proposals and shape the future of your
+              project.
+            </p>
+            <p
+              className="text-[11px] font-mono mt-2"
+              style={{ color: "rgba(123,47,255,0.7)" }}
+            >
+              Only visible to you · token address pre-filled
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-mono font-semibold transition-all duration-200 group-hover:gap-2.5"
+          style={{
+            background: "rgba(123,47,255,0.12)",
+            border: "1px solid rgba(123,47,255,0.3)",
+            color: "var(--neon-purple)",
+          }}
+        >
+          Launch DAO
+          <ArrowRight size={13} />
+        </div>
+      </div>
+    </Link>
+  );
 }
 
 // ─── Share bar ────────────────────────────────────────────────────────────────
@@ -167,6 +251,7 @@ function ShareBar({
 export default function TokenPageClient() {
   const { address: poolAddr } = useParams<{ address: `0x${string}` }>();
   const chainId = useChainId();
+  const { address: walletAddr } = useAccount();
   const ethUSD = useETHUSD(chainId);
   const chainMeta = getChainMeta(chainId);
 
@@ -240,6 +325,10 @@ export default function TokenPageClient() {
   const raisedUSD = poolETH != null && ethUSD ? weiToUSD(poolETH, ethUSD) : 0;
   const fdv = priceWei != null && ethUSD ? calcFDV(priceWei, ethUSD) : "";
   const native = chainMeta.nativeCurrencyLabel;
+  const isCreator =
+    !!walletAddr &&
+    !!creatorAddr &&
+    walletAddr.toLowerCase() === (creatorAddr as string).toLowerCase();
 
   if (isLoading)
     return (
@@ -507,6 +596,13 @@ export default function TokenPageClient() {
               graduated={!!graduated}
               ethUSD={ethUSD}
               nativeCurrencyLabel={native}
+            />
+          )}
+
+          {isCreator && tokenAddr && (
+            <LaunchDAOBanner
+              tokenAddr={tokenAddr as string}
+              symbol={displaySymbol}
             />
           )}
         </div>
