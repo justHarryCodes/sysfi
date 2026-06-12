@@ -1,6 +1,6 @@
-// Guild structured data — MongoDB (replaces PostgreSQL guildDbService)
-import { ObjectId } from "mongodb";
-import { getDb } from "./mongodb";
+// Guild structured data — PostgreSQL (mirrors nexus-c guildDbService.js)
+// Messages / posts / reactions stay in MongoDB via guild-mongo.ts
+import pgPool, { withTransaction } from "./postgres";
 import crypto from "crypto";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -18,10 +18,9 @@ export interface Guild {
   tokenGating: unknown;
   linkedDaoAddress: string | null;
   linkedDaoChainId: number | null;
-  chatSettings: { isLocked: boolean; messageDelay: number };
-  externalLinks: Record<string, string | null> | null;
   createdAt: Date;
   updatedAt: Date;
+  // snake_case aliases the mobile client expects
   logo_url: string | null;
   banner_url: string | null;
   member_count: number;
@@ -30,46 +29,42 @@ export interface Guild {
   linked_dao_chain_id: number | null;
 }
 
-// ─── Collection helpers ───────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-const col = {
-  guilds:      async () => (await getDb()).collection("guilds"),
-  members:     async () => (await getDb()).collection("guild_members"),
-  bans:        async () => (await getDb()).collection("guild_bans"),
-  moderators:  async () => (await getDb()).collection("guild_moderators"),
-  invites:     async () => (await getDb()).collection("guild_invites"),
-  unread:      async () => (await getDb()).collection("guild_unread"),
-};
-
-// ─── Normalize ────────────────────────────────────────────────────────────────
-
-function normalizeGuild(doc: Record<string, unknown>): Guild {
-  const id = (doc._id as ObjectId).toString();
+function normalizeGuild(row: Record<string, unknown>): Guild {
   return {
-    id,
-    name:        doc.name        as string,
-    description: doc.description as string,
-    genre:       doc.genre       as string,
-    privacy:     doc.privacy     as string,
-    logoUrl:     (doc.logoUrl    as string) || null,
-    bannerUrl:   (doc.bannerUrl  as string) || null,
-    createdBy:   doc.createdBy   as string,
-    memberCount: (doc.memberCount as number) ?? 0,
-    tokenGating: doc.tokenGating || null,
-    linkedDaoAddress:  (doc.linkedDaoAddress  as string) || null,
-    linkedDaoChainId:  (doc.linkedDaoChainId  as number) || null,
-    chatSettings: (doc.chatSettings as Guild["chatSettings"]) || { isLocked: false, messageDelay: 0 },
-    externalLinks: (doc.externalLinks as Record<string, string | null>) || null,
-    createdAt:   doc.createdAt   as Date,
-    updatedAt:   doc.updatedAt   as Date,
-    // snake_case aliases for wallet compatibility
-    logo_url:              (doc.logoUrl           as string) || null,
-    banner_url:            (doc.bannerUrl         as string) || null,
-    member_count:          (doc.memberCount       as number) ?? 0,
-    created_by:            doc.createdBy          as string,
-    linked_dao_address:    (doc.linkedDaoAddress  as string) || null,
-    linked_dao_chain_id:   (doc.linkedDaoChainId  as number) || null,
+    id:          row.id          as string,
+    name:        row.name        as string,
+    description: row.description as string,
+    genre:       row.genre       as string,
+    privacy:     row.privacy     as string,
+    logoUrl:     (row.logo_url   as string) || null,
+    bannerUrl:   (row.banner_url as string) || null,
+    createdBy:   row.created_by  as string,
+    memberCount: (row.member_count as number) ?? 0,
+    tokenGating: row.token_gating || null,
+    linkedDaoAddress:  (row.linked_dao_address  as string) || null,
+    linkedDaoChainId:  (row.linked_dao_chain_id as number) || null,
+    createdAt:   row.created_at  as Date,
+    updatedAt:   row.updated_at  as Date,
+    logo_url:              (row.logo_url           as string) || null,
+    banner_url:            (row.banner_url         as string) || null,
+    member_count:          (row.member_count       as number) ?? 0,
+    created_by:            row.created_by          as string,
+    linked_dao_address:    (row.linked_dao_address  as string) || null,
+    linked_dao_chain_id:   (row.linked_dao_chain_id as number) || null,
   };
+}
+
+function generateCode(len = 8): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+  return Array.from({ length: len }, () => chars[crypto.randomInt(chars.length)]).join("");
+}
+
+async function q<T = Record<string, unknown>>(sql: string, params: unknown[] = []): Promise<T[]> {
+  if (!pgPool) throw new Error("PostgreSQL not configured");
+  const res = await pgPool.query(sql, params);
+  return res.rows as T[];
 }
 
 // ─── Guild CRUD ───────────────────────────────────────────────────────────────
@@ -78,380 +73,341 @@ export async function createGuild(data: {
   name: string; description?: string; genre?: string; privacy?: string;
   logoUrl?: string; bannerUrl?: string; createdBy: string; tokenGating?: unknown;
 }): Promise<Guild> {
-  const doc = {
-    name:        data.name,
-    description: data.description || "",
-    genre:       data.genre       || "general",
-    privacy:     data.privacy     || "public",
-    logoUrl:     data.logoUrl     || null,
-    bannerUrl:   data.bannerUrl   || null,
-    createdBy:   data.createdBy,
-    memberCount: 1,
-    tokenGating: data.tokenGating || null,
-    linkedDaoAddress:  null as string | null,
-    linkedDaoChainId:  null as number | null,
-    chatSettings: { isLocked: false, messageDelay: 0 },
-    externalLinks: null as Record<string, string | null> | null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
+  const { name, description, genre, privacy, logoUrl, bannerUrl, createdBy, tokenGating } = data;
 
-  const result = await (await col.guilds()).insertOne(doc);
-  const guildId = result.insertedId.toString();
+  return await withTransaction(async (client) => {
+    const guildRes = await client.query(
+      `INSERT INTO guilds (name, description, genre, privacy, logo_url, banner_url, created_by, token_gating, member_count)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,1) RETURNING *`,
+      [name, description || "", genre || "General", privacy || "public",
+       logoUrl || null, bannerUrl || null, createdBy,
+       tokenGating ? JSON.stringify(tokenGating) : null],
+    );
+    const guild = guildRes.rows[0];
 
-  await (await col.members()).insertOne({
-    guildId, userId: data.createdBy, status: "owner",
-    username: null, displayName: null, userAvatar: null, walletAddress: null,
-    inviteId: null, joinedAt: new Date(),
-  });
-
-  return normalizeGuild({ _id: result.insertedId, ...doc });
+    await client.query(
+      `INSERT INTO guild_members (guild_id, user_id, status) VALUES ($1,$2,'owner')`,
+      [guild.id, createdBy],
+    );
+    await client.query(
+      `INSERT INTO guild_chat_settings (guild_id) VALUES ($1) ON CONFLICT DO NOTHING`,
+      [guild.id],
+    );
+    return normalizeGuild(guild);
+  }) as Guild;
 }
 
 export async function getGuildById(guildId: string): Promise<Guild | null> {
-  try {
-    const doc = await (await col.guilds()).findOne({ _id: new ObjectId(guildId) });
-    return doc ? normalizeGuild(doc as Record<string, unknown>) : null;
-  } catch {
-    return null;
-  }
-}
-
-export async function getGuildsByIds(guildIds: string[]): Promise<Guild[]> {
-  if (!guildIds?.length) return [];
-  const ids = guildIds.map((id) => { try { return new ObjectId(id); } catch { return null; } }).filter((x): x is ObjectId => x !== null);
-  const docs = await (await col.guilds()).find({ _id: { $in: ids } }).toArray();
-  return docs.map((d) => normalizeGuild(d as Record<string, unknown>));
+  const rows = await q(`SELECT * FROM guilds WHERE id = $1`, [guildId]);
+  return rows[0] ? normalizeGuild(rows[0]) : null;
 }
 
 export async function updateGuild(guildId: string, ownerUid: string, updates: Record<string, unknown>): Promise<Guild | null> {
-  const allowed: Record<string, string> = {
-    name: "name", description: "description", genre: "genre",
-    logoUrl: "logoUrl", bannerUrl: "bannerUrl",
-  };
-  const $set: Record<string, unknown> = { updatedAt: new Date() };
-  for (const [k, v] of Object.entries(updates)) {
-    if (allowed[k]) $set[allowed[k]] = v;
-  }
-  if (Object.keys($set).length === 1) return null;
+  const allowed = ["name", "description", "genre", "logo_url", "banner_url"];
+  const fields: string[] = [];
+  const values: unknown[] = [];
+  let idx = 1;
 
-  const result = await (await col.guilds()).findOneAndUpdate(
-    { _id: new ObjectId(guildId), createdBy: ownerUid },
-    { $set },
-    { returnDocument: "after" },
+  for (const [k, v] of Object.entries(updates)) {
+    const col = k === "logoUrl" ? "logo_url" : k === "bannerUrl" ? "banner_url" : k;
+    if (allowed.includes(col)) {
+      fields.push(`${col} = $${idx++}`);
+      values.push(v);
+    }
+  }
+  if (!fields.length) return null;
+  fields.push(`updated_at = NOW()`);
+  values.push(guildId, ownerUid);
+
+  const rows = await q(
+    `UPDATE guilds SET ${fields.join(", ")} WHERE id = $${idx++} AND created_by = $${idx} RETURNING *`,
+    values,
   );
-  return result ? normalizeGuild(result as Record<string, unknown>) : null;
+  return rows[0] ? normalizeGuild(rows[0]) : null;
 }
 
 export async function deleteGuild(guildId: string, ownerUid: string): Promise<boolean> {
-  const res = await (await col.guilds()).deleteOne({ _id: new ObjectId(guildId), createdBy: ownerUid });
-  return res.deletedCount > 0;
+  const rows = await q(`DELETE FROM guilds WHERE id = $1 AND created_by = $2 RETURNING id`, [guildId, ownerUid]);
+  return rows.length > 0;
 }
 
-// ─── Guild lists ──────────────────────────────────────────────────────────────
-
 export async function getUserGuilds(userId: string): Promise<Guild[]> {
-  const memberships = await (await col.members()).find({ userId }).toArray();
-  const guildIds = memberships.map((m) => {
-    try { return new ObjectId(m.guildId as string); } catch { return null; }
-  }).filter((x): x is ObjectId => x !== null);
-  if (!guildIds.length) return [];
-  const docs = await (await col.guilds()).find({ _id: { $in: guildIds } }).sort({ updatedAt: -1 }).toArray();
-  return docs.map((d) => normalizeGuild(d as Record<string, unknown>));
+  const rows = await q(
+    `SELECT g.* FROM guilds g
+     JOIN guild_members gm ON gm.guild_id = g.id
+     WHERE gm.user_id = $1
+     ORDER BY g.updated_at DESC`,
+    [userId],
+  );
+  return rows.map(normalizeGuild);
 }
 
 export async function getTopGuilds(limit = 10): Promise<Guild[]> {
-  const docs = await (await col.guilds())
-    .find({ privacy: "public" }).sort({ memberCount: -1, createdAt: -1 }).limit(limit).toArray();
-  return docs.map((d) => normalizeGuild(d as Record<string, unknown>));
+  const rows = await q(
+    `SELECT * FROM guilds WHERE privacy = 'public' ORDER BY member_count DESC, created_at DESC LIMIT $1`,
+    [limit],
+  );
+  return rows.map(normalizeGuild);
 }
 
-export async function searchGuilds(query: string, genre: string | null = null, limit = 30): Promise<Guild[]> {
-  const filter: Record<string, unknown> = {
-    privacy: "public",
-    $or: [
-      { name:        { $regex: query, $options: "i" } },
-      { description: { $regex: query, $options: "i" } },
-    ],
-  };
-  if (genre) filter.genre = genre;
-  const docs = await (await col.guilds()).find(filter).sort({ memberCount: -1 }).limit(limit).toArray();
-  return docs.map((d) => normalizeGuild(d as Record<string, unknown>));
+export async function searchGuilds(query: string, genre?: string, limit = 30): Promise<Guild[]> {
+  const params: unknown[] = [`%${query}%`];
+  let sql = `SELECT * FROM guilds WHERE privacy = 'public' AND (name ILIKE $1 OR description ILIKE $1)`;
+  if (genre) { params.push(genre); sql += ` AND genre = $${params.length}`; }
+  params.push(limit);
+  sql += ` ORDER BY member_count DESC LIMIT $${params.length}`;
+  const rows = await q(sql, params);
+  return rows.map(normalizeGuild);
 }
 
 export async function getAllLinkedDaoGuilds(): Promise<Guild[]> {
-  const docs = await (await col.guilds())
-    .find({ linkedDaoAddress: { $ne: null } }).sort({ name: 1 }).toArray();
-  return docs.map((d) => normalizeGuild(d as Record<string, unknown>));
+  const rows = await q(`SELECT * FROM guilds WHERE linked_dao_address IS NOT NULL ORDER BY name`);
+  return rows.map(normalizeGuild);
+}
+
+export async function getGuildsByIds(ids: string[]): Promise<Guild[]> {
+  if (!ids.length) return [];
+  const rows = await q(`SELECT * FROM guilds WHERE id = ANY($1)`, [ids]);
+  return rows.map(normalizeGuild);
 }
 
 // ─── Membership ───────────────────────────────────────────────────────────────
 
 export async function getMembership(guildId: string, userId: string) {
-  return (await col.members()).findOne({ guildId, userId });
+  const rows = await q(`SELECT * FROM guild_members WHERE guild_id = $1 AND user_id = $2`, [guildId, userId]);
+  return rows[0] || null;
+}
+
+export async function getMembers(guildId: string) {
+  return await q(`SELECT * FROM guild_members WHERE guild_id = $1 ORDER BY joined_at ASC`, [guildId]);
 }
 
 export async function joinGuild(guildId: string, userId: string, memberData: {
   username?: string; displayName?: string; userAvatar?: string; walletAddress?: string;
 }, inviteId?: string) {
-  const ban = await (await col.bans()).findOne({ guildId, userId });
-  if (ban) throw new Error("You are banned from this guild");
+  return await withTransaction(async (client) => {
+    const banCheck = await client.query(
+      `SELECT 1 FROM guild_bans WHERE guild_id = $1 AND user_id = $2`, [guildId, userId],
+    );
+    if ((banCheck.rowCount ?? 0) > 0) throw new Error("You are banned from this guild");
 
-  const existing = await (await col.members()).findOne({ guildId, userId });
-  if (existing) return existing;
+    const res = await client.query(
+      `INSERT INTO guild_members (guild_id, user_id, username, display_name, user_avatar, wallet_address, status, invite_id)
+       VALUES ($1,$2,$3,$4,$5,$6,'member',$7)
+       ON CONFLICT (guild_id, user_id) DO NOTHING RETURNING *`,
+      [guildId, userId, memberData.username || null, memberData.displayName || null,
+       memberData.userAvatar || null, memberData.walletAddress || null, inviteId || null],
+    );
 
-  const doc = {
-    guildId, userId, status: "member",
-    username:      memberData.username      || null,
-    displayName:   memberData.displayName   || null,
-    userAvatar:    memberData.userAvatar    || null,
-    walletAddress: memberData.walletAddress || null,
-    inviteId:      inviteId                 || null,
-    joinedAt:      new Date(),
-  };
-  await (await col.members()).insertOne(doc);
-  await (await col.guilds()).updateOne({ _id: new ObjectId(guildId) }, {
-    $inc: { memberCount: 1 }, $set: { updatedAt: new Date() },
+    if ((res.rowCount ?? 0) > 0) {
+      await client.query(`UPDATE guilds SET member_count = member_count + 1, updated_at = NOW() WHERE id = $1`, [guildId]);
+      if (inviteId) {
+        await client.query(`UPDATE guild_invites SET uses = uses + 1 WHERE id = $1 AND is_active = TRUE`, [inviteId]);
+      }
+    }
+    return res.rows[0] || null;
   });
-  if (inviteId) {
-    await (await col.invites()).updateOne({ _id: new ObjectId(inviteId), isActive: true }, { $inc: { uses: 1 } });
-  }
-  return doc;
 }
 
-export async function leaveGuild(guildId: string, userId: string) {
+export async function leaveGuild(guildId: string, userId: string): Promise<boolean> {
   const guild = await getGuildById(guildId);
   if (!guild) throw new Error("Guild not found");
   if (guild.createdBy === userId) throw new Error("Owner cannot leave — delete the guild instead");
 
-  const res = await (await col.members()).deleteOne({ guildId, userId });
-  if (res.deletedCount > 0) {
-    await (await col.guilds()).updateOne({ _id: new ObjectId(guildId) }, {
-      $inc: { memberCount: -1 }, $set: { updatedAt: new Date() },
-    });
-  }
-  return res.deletedCount > 0;
+  return await withTransaction(async (client) => {
+    const res = await client.query(
+      `DELETE FROM guild_members WHERE guild_id = $1 AND user_id = $2 RETURNING user_id`, [guildId, userId],
+    );
+    if ((res.rowCount ?? 0) > 0) {
+      await client.query(`UPDATE guilds SET member_count = GREATEST(member_count - 1, 0), updated_at = NOW() WHERE id = $1`, [guildId]);
+    }
+    return (res.rowCount ?? 0) > 0;
+  }) as boolean;
 }
 
-export async function getMembers(guildId: string) {
-  return (await col.members()).find({ guildId }).sort({ joinedAt: 1 }).toArray();
-}
+// ─── Bans ─────────────────────────────────────────────────────────────────────
 
 export async function banUser(guildId: string, userId: string, username: string, bannedBy: string) {
-  await (await col.bans()).updateOne(
-    { guildId, userId },
-    { $set: { guildId, userId, username, bannedBy, bannedAt: new Date() } },
-    { upsert: true },
-  );
-  const res = await (await col.members()).deleteOne({ guildId, userId });
-  if (res.deletedCount > 0) {
-    await (await col.guilds()).updateOne({ _id: new ObjectId(guildId) }, { $inc: { memberCount: -1 } });
-  }
-  return true;
+  return await withTransaction(async (client) => {
+    await client.query(
+      `INSERT INTO guild_bans (guild_id, user_id, username, banned_by) VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
+      [guildId, userId, username, bannedBy],
+    );
+    const del = await client.query(
+      `DELETE FROM guild_members WHERE guild_id = $1 AND user_id = $2 RETURNING user_id`, [guildId, userId],
+    );
+    if ((del.rowCount ?? 0) > 0) {
+      await client.query(`UPDATE guilds SET member_count = GREATEST(member_count - 1, 0) WHERE id = $1`, [guildId]);
+    }
+    return true;
+  });
 }
 
 // ─── Moderators ───────────────────────────────────────────────────────────────
 
 export async function getModerators(guildId: string) {
-  return (await col.moderators()).find({ guildId }).sort({ addedAt: 1 }).toArray();
+  return await q(`SELECT * FROM guild_moderators WHERE guild_id = $1 ORDER BY added_at ASC`, [guildId]);
 }
 
 export async function addModerator(guildId: string, userId: string, data: {
-  username?: string; userAvatar?: string; roleName?: string; permissions?: object; addedBy: string;
+  username?: string; userAvatar?: string; roleName?: string;
+  permissions?: unknown; addedBy: string;
 }) {
-  const doc = {
-    guildId, userId,
-    username:    data.username    || null,
-    userAvatar:  data.userAvatar  || null,
-    roleName:    data.roleName    || "moderator",
-    permissions: data.permissions || {},
-    addedBy:     data.addedBy,
-    addedAt:     new Date(),
-  };
-  await (await col.moderators()).updateOne({ guildId, userId }, { $set: doc }, { upsert: true });
-  return doc;
-}
-
-export async function removeModerator(guildId: string, userId: string) {
-  const res = await (await col.moderators()).deleteOne({ guildId, userId });
-  return res.deletedCount > 0;
-}
-
-export async function updateModeratorPermissions(guildId: string, userId: string, permissions: object) {
-  const result = await (await col.moderators()).findOneAndUpdate(
-    { guildId, userId },
-    { $set: { permissions } },
-    { returnDocument: "after" },
+  const rows = await q(
+    `INSERT INTO guild_moderators (guild_id, user_id, username, user_avatar, role_name, permissions, added_by)
+     VALUES ($1,$2,$3,$4,$5,$6,$7)
+     ON CONFLICT (guild_id, user_id) DO UPDATE SET
+       role_name = EXCLUDED.role_name, permissions = EXCLUDED.permissions, added_at = NOW()
+     RETURNING *`,
+    [guildId, userId, data.username || null, data.userAvatar || null,
+     data.roleName || "Moderator", JSON.stringify(data.permissions || {}), data.addedBy],
   );
-  return result;
+  return rows[0];
+}
+
+export async function removeModerator(guildId: string, userId: string): Promise<boolean> {
+  const rows = await q(`DELETE FROM guild_moderators WHERE guild_id = $1 AND user_id = $2 RETURNING user_id`, [guildId, userId]);
+  return rows.length > 0;
+}
+
+export async function updateModeratorPermissions(guildId: string, userId: string, permissions: unknown) {
+  const rows = await q(
+    `UPDATE guild_moderators SET permissions = $3 WHERE guild_id = $1 AND user_id = $2 RETURNING *`,
+    [guildId, userId, JSON.stringify(permissions)],
+  );
+  return rows[0] || null;
 }
 
 // ─── Invites ──────────────────────────────────────────────────────────────────
 
 export async function getInvites(guildId: string) {
-  return (await col.invites()).find({ guildId }).sort({ createdAt: -1 }).toArray();
+  return await q(`SELECT * FROM guild_invites WHERE guild_id = $1 ORDER BY created_at DESC`, [guildId]);
 }
 
 export async function getInviteByCode(code: string) {
-  const invite = await (await col.invites()).findOne({ code, isActive: true });
-  if (!invite) return null;
-  const guild = await getGuildById(invite.guildId as string);
-  if (!guild) return null;
-  return {
-    ...invite,
-    id: (invite._id as ObjectId).toString(),
-    guild_name: guild.name,
-    guild_description: guild.description,
-    logo_url: guild.logoUrl,
-    banner_url: guild.bannerUrl,
-    privacy: guild.privacy,
-    member_count: guild.memberCount,
-    genre: guild.genre,
-    token_gating: guild.tokenGating,
-    created_by: guild.createdBy,
-  };
+  const rows = await q(
+    `SELECT gi.*, g.name as guild_name, g.description as guild_description,
+            g.logo_url, g.banner_url, g.privacy, g.member_count, g.genre,
+            g.token_gating, g.created_by
+     FROM guild_invites gi
+     JOIN guilds g ON g.id = gi.guild_id
+     WHERE gi.code = $1 AND gi.is_active = TRUE`,
+    [code],
+  );
+  return rows[0] || null;
 }
 
-export async function createInvite(guildId: string, createdBy: string, options: {
-  expiresAt?: Date; maxUses?: number;
-} = {}) {
+export async function createInvite(guildId: string, createdBy: string, options: { expiresAt?: Date; maxUses?: number } = {}) {
   const code = generateCode();
-  const doc = {
-    guildId, code, createdBy,
-    expiresAt: options.expiresAt || null,
-    maxUses:   options.maxUses   || null,
-    uses:      0,
-    isActive:  true,
-    createdAt: new Date(),
-  };
-  const result = await (await col.invites()).insertOne(doc);
-  return { id: result.insertedId.toString(), ...doc };
+  const id = `${guildId}_${code}`;
+  const rows = await q(
+    `INSERT INTO guild_invites (id, guild_id, code, created_by, expires_at, max_uses) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+    [id, guildId, code, createdBy, options.expiresAt || null, options.maxUses || null],
+  );
+  return rows[0];
 }
 
-export async function deactivateInvite(inviteId: string, ownerUid: string) {
-  const invite = await (await col.invites()).findOne({ _id: new ObjectId(inviteId) });
-  if (!invite) return false;
-  const guild = await getGuildById(invite.guildId as string);
-  if (!guild || guild.createdBy !== ownerUid) return false;
-  const res = await (await col.invites()).updateOne({ _id: new ObjectId(inviteId) }, { $set: { isActive: false } });
-  return res.modifiedCount > 0;
+export async function deactivateInvite(inviteId: string, ownerUid: string): Promise<boolean> {
+  const rows = await q(
+    `UPDATE guild_invites SET is_active = FALSE
+     WHERE id = $1 AND guild_id IN (SELECT id FROM guilds WHERE created_by = $2) RETURNING id`,
+    [inviteId, ownerUid],
+  );
+  return rows.length > 0;
 }
 
 // ─── Chat settings ────────────────────────────────────────────────────────────
 
 export async function getChatSettings(guildId: string) {
-  const guild = await (await col.guilds()).findOne(
-    { _id: new ObjectId(guildId) },
-    { projection: { chatSettings: 1 } }
-  );
-  return guild?.chatSettings || { is_locked: false, message_delay: 0 };
+  const rows = await q(`SELECT * FROM guild_chat_settings WHERE guild_id = $1`, [guildId]);
+  return rows[0] || { guild_id: guildId, is_locked: false, message_delay: 0 };
 }
 
-export async function updateChatSettings(guildId: string, _ownerUid: string, settings: {
-  isLocked?: boolean; messageDelay?: number;
-}) {
-  const chatSettings = {
-    isLocked:     settings.isLocked     ?? false,
-    messageDelay: settings.messageDelay ?? 0,
-    is_locked:    settings.isLocked     ?? false,
-    message_delay: settings.messageDelay ?? 0,
-  };
-  await (await col.guilds()).updateOne({ _id: new ObjectId(guildId) }, { $set: { chatSettings } });
-  return chatSettings;
+export async function updateChatSettings(guildId: string, ownerUid: string, settings: { isLocked?: boolean; messageDelay?: number }) {
+  const rows = await q(
+    `INSERT INTO guild_chat_settings (guild_id, is_locked, message_delay, updated_by, updated_at)
+     VALUES ($1,$2,$3,$4,NOW())
+     ON CONFLICT (guild_id) DO UPDATE SET
+       is_locked = EXCLUDED.is_locked, message_delay = EXCLUDED.message_delay,
+       updated_by = EXCLUDED.updated_by, updated_at = NOW()
+     RETURNING *`,
+    [guildId, settings.isLocked ?? false, settings.messageDelay ?? 0, ownerUid],
+  );
+  return rows[0];
 }
 
 // ─── External links ───────────────────────────────────────────────────────────
 
 export async function getExternalLinks(guildId: string) {
-  const guild = await (await col.guilds()).findOne(
-    { _id: new ObjectId(guildId) },
-    { projection: { externalLinks: 1 } }
-  );
-  return guild?.externalLinks || null;
+  const rows = await q(`SELECT * FROM guild_external_links WHERE guild_id = $1`, [guildId]);
+  return rows[0] || null;
 }
 
-export async function updateExternalLinks(guildId: string, _ownerUid: string, links: Record<string, string | null>) {
-  const externalLinks = {
-    website:  links.website  || null,
-    twitter:  links.twitter  || null,
-    discord:  links.discord  || null,
-    telegram: links.telegram || null,
-    other:    links.other    || null,
-    updatedAt: new Date(),
-  };
-  await (await col.guilds()).updateOne({ _id: new ObjectId(guildId) }, { $set: { externalLinks } });
-  return externalLinks;
+export async function updateExternalLinks(guildId: string, ownerUid: string, links: {
+  website?: string; twitter?: string; discord?: string; telegram?: string; other?: string;
+}) {
+  const rows = await q(
+    `INSERT INTO guild_external_links (guild_id, website, twitter, discord, telegram, other, updated_by, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,NOW())
+     ON CONFLICT (guild_id) DO UPDATE SET
+       website = EXCLUDED.website, twitter = EXCLUDED.twitter, discord = EXCLUDED.discord,
+       telegram = EXCLUDED.telegram, other = EXCLUDED.other,
+       updated_by = EXCLUDED.updated_by, updated_at = NOW()
+     RETURNING *`,
+    [guildId, links.website || null, links.twitter || null, links.discord || null,
+     links.telegram || null, links.other || null, ownerUid],
+  );
+  return rows[0];
 }
 
 // ─── DAO link ─────────────────────────────────────────────────────────────────
 
 export async function linkDao(guildId: string, ownerUid: string, daoAddress: string, chainId: number) {
-  const result = await (await col.guilds()).findOneAndUpdate(
-    { _id: new ObjectId(guildId), createdBy: ownerUid },
-    { $set: { linkedDaoAddress: daoAddress.toLowerCase(), linkedDaoChainId: chainId, updatedAt: new Date() } },
-    { returnDocument: "after" },
+  const rows = await q(
+    `UPDATE guilds SET linked_dao_address = $3, linked_dao_chain_id = $4, updated_at = NOW()
+     WHERE id = $1 AND created_by = $2 RETURNING *`,
+    [guildId, ownerUid, daoAddress.toLowerCase(), chainId],
   );
-  return result ? normalizeGuild(result as Record<string, unknown>) : null;
+  return rows[0] ? normalizeGuild(rows[0]) : null;
 }
 
 export async function unlinkDao(guildId: string, ownerUid: string) {
-  const result = await (await col.guilds()).findOneAndUpdate(
-    { _id: new ObjectId(guildId), createdBy: ownerUid },
-    { $set: { linkedDaoAddress: null, linkedDaoChainId: null, updatedAt: new Date() } },
-    { returnDocument: "after" },
+  const rows = await q(
+    `UPDATE guilds SET linked_dao_address = NULL, linked_dao_chain_id = NULL, updated_at = NOW()
+     WHERE id = $1 AND created_by = $2 RETURNING *`,
+    [guildId, ownerUid],
   );
-  return result ? normalizeGuild(result as Record<string, unknown>) : null;
+  return rows[0] ? normalizeGuild(rows[0]) : null;
 }
 
-// ─── Unread (MongoDB-based, no Redis) ────────────────────────────────────────
+// ─── Unread (PostgreSQL table if exists, graceful fallback) ───────────────────
 
 export async function getUnreadCount(guildId: string, userId: string): Promise<number> {
-  const doc = await (await col.unread()).findOne({ guildId, userId });
-  return (doc?.count as number) || 0;
+  try {
+    const rows = await q<{ count: number }>(
+      `SELECT count FROM guild_unread WHERE guild_id = $1 AND user_id = $2`, [guildId, userId],
+    );
+    return rows[0]?.count ?? 0;
+  } catch { return 0; }
 }
 
-export async function incrementUnread(guildId: string, userId: string) {
-  await (await col.unread()).updateOne(
-    { guildId, userId },
-    { $inc: { count: 1 } },
-    { upsert: true },
-  );
+export async function resetUnread(guildId: string, userId: string): Promise<void> {
+  try {
+    await q(
+      `INSERT INTO guild_unread (guild_id, user_id, count) VALUES ($1,$2,0)
+       ON CONFLICT (guild_id, user_id) DO UPDATE SET count = 0`,
+      [guildId, userId],
+    );
+  } catch { /* non-fatal */ }
 }
 
-export async function resetUnread(guildId: string, userId: string) {
-  await (await col.unread()).updateOne({ guildId, userId }, { $set: { count: 0 } }, { upsert: true });
-}
-
-// ─── Indexes ──────────────────────────────────────────────────────────────────
-
-export async function ensureGuildServiceIndexes() {
-  const db = await getDb();
-  await db.collection("guilds").createIndexes([
-    { key: { privacy: 1, memberCount: -1 } },
-    { key: { linkedDaoAddress: 1 } },
-  ]);
-  await db.collection("guild_members").createIndexes([
-    { key: { guildId: 1, userId: 1 }, unique: true },
-    { key: { userId: 1 } },
-  ]);
-  await db.collection("guild_bans").createIndexes([
-    { key: { guildId: 1, userId: 1 }, unique: true },
-  ]);
-  await db.collection("guild_moderators").createIndexes([
-    { key: { guildId: 1, userId: 1 }, unique: true },
-  ]);
-  await db.collection("guild_invites").createIndexes([
-    { key: { code: 1 }, unique: true },
-    { key: { guildId: 1 } },
-  ]);
-  await db.collection("guild_unread").createIndexes([
-    { key: { guildId: 1, userId: 1 }, unique: true },
-  ]);
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function generateCode(len = 8) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
-  return Array.from({ length: len }, () => chars[crypto.randomInt(chars.length)]).join("");
+export async function incrementUnread(guildId: string, excludeUserId: string): Promise<void> {
+  try {
+    await q(
+      `INSERT INTO guild_unread (guild_id, user_id, count)
+       SELECT $1, user_id, 1 FROM guild_members WHERE guild_id = $1 AND user_id != $2
+       ON CONFLICT (guild_id, user_id) DO UPDATE SET count = guild_unread.count + 1`,
+      [guildId, excludeUserId],
+    );
+  } catch { /* non-fatal */ }
 }

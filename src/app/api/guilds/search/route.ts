@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const q     = req.nextUrl.searchParams.get("q");
     const genre = req.nextUrl.searchParams.get("genre");
     if (!q?.trim()) return ok([]);
-    return ok(await searchGuilds(q.trim(), genre || null));
+    return ok(await searchGuilds(q.trim(), genre || undefined));
   } catch (err) {
     console.error("GET /api/guilds/search:", err);
     return serverError();
