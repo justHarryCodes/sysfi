@@ -111,6 +111,20 @@ const nextConfig = {
 
   serverComponentsExternalPackages: ["mongodb"],
 
+  // Allow clients that call /daos/... instead of /api/daos/... (e.g. mobile app)
+  async rewrites() {
+    const prefixes = [
+      "daos", "proposals", "activity", "guilds",
+      "tokens", "metadata", "swap", "feed", "chat",
+      "mint", "stats", "health", "chains", "images",
+      "tokenlist",
+    ];
+    return prefixes.map((p) => ({
+      source: `/${p}/:path*`,
+      destination: `/api/${p}/:path*`,
+    }));
+  },
+
   // Cache headers for OG images and the token list endpoint
   async headers() {
     return [
