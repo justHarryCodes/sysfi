@@ -49,7 +49,7 @@ export const METADATA_COL = "token_metadata";
 
 export async function getDb() {
   const client = await clientPromise;
-  return client.db();   // DB name from the URI
+  return client.db(process.env.MONGODB_DB_NAME ?? "mongodb-database-sysfi");
 }
 
 /** Shape of a document in token_metadata */
