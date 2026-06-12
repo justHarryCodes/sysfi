@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Rocket, Flame, Wallet, ExternalLink, ArrowLeftRight, Users } from "lucide-react";
+import { Rocket, Flame, Wallet, ExternalLink, ArrowLeftRight, Users, Sun, Moon } from "lucide-react";
 import ChainSwitcher from "./ChainSwitcher";
 import { useWallet } from "@/context/WalletContext";
+import { useTheme } from "@/lib/theme";
 import Image from "next/image";
 
 const NAV = [
@@ -20,6 +21,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const router   = useRouter();
   const { chainMeta } = useWallet();
+  const { theme, toggle } = useTheme();
 
   useEffect(() => { NAV.forEach((n) => router.prefetch(n.href)); }, [router]);
 
@@ -70,7 +72,7 @@ export default function Sidebar() {
               }
             >
               <Icon
-                size={18}
+                size={22}
                 style={{
                   color:  isActive ? neonColor : "var(--c-text-2)",
                   filter: isActive ? `drop-shadow(0 0 6px ${neonColor})` : "none",
@@ -78,7 +80,7 @@ export default function Sidebar() {
                 }}
               />
               <span
-                className="text-sm font-medium"
+                className="text-base font-medium"
                 style={{ color: isActive ? neonColor : "var(--c-text-2)", fontFamily: "'Outfit', sans-serif" }}
               >
                 {label}
@@ -94,8 +96,19 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Explorer */}
-      <div className="px-4 py-3" style={{ borderTop: "1px solid var(--border-1)" }}>
+      {/* Theme toggle + Explorer */}
+      <div className="px-4 py-3 flex flex-col gap-3" style={{ borderTop: "1px solid var(--border-1)" }}>
+        <button
+          onClick={toggle}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 w-full"
+          style={{ background: "var(--bg-input)", border: "1px solid var(--border-1)", color: "var(--c-text-2)" }}
+        >
+          {theme === "dark" ? <Sun size={22} /> : <Moon size={22} />}
+          <span className="text-base font-medium" style={{ fontFamily: "'Outfit', sans-serif" }}>
+            {theme === "dark" ? "Light mode" : "Dark mode"}
+          </span>
+        </button>
+
         <a
           href={chainMeta.explorerUrl}
           target="_blank"
@@ -105,7 +118,7 @@ export default function Sidebar() {
           <ExternalLink size={11} />
           <span className="font-mono truncate">{chainMeta.explorerName}</span>
         </a>
-        <p className="text-[10px] font-mono text-text-muted mt-1">Chain {chainMeta.chain.id}</p>
+        <p className="text-[10px] font-mono text-text-muted -mt-2">Chain {chainMeta.chain.id}</p>
       </div>
     </aside>
   );

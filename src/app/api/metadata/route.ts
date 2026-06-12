@@ -47,42 +47,26 @@ export async function GET(req: NextRequest) {
     const col = db.collection(METADATA_COL);
 
     const filter = chainId ? { chainId } : {};
-    const [rawDocs, total] = await Promise.all([
-      col.find(filter, { projection: { logoData: 0, bannerData: 0 } })
-         .sort({ createdAt: -1 })
-         .skip(page * limit)
-         .limit(limit)
-         .toArray(),
+
+    // Single aggregation: compute hasLogo/hasBanner in-place, no second query
+    const [results, total] = await Promise.all([
+      col.aggregate([
+        { $match: filter },
+        { $sort: { createdAt: -1 } },
+        { $skip: page * limit },
+        { $limit: limit },
+        { $addFields: {
+            hasLogo:   { $or: [{ $gt: [{ $strLenBytes: { $ifNull: ["$logoUrl",   ""] } }, 0] },
+                                { $gt: [{ $strLenBytes: { $ifNull: ["$logoData",  ""] } }, 0] }] },
+            hasBanner: { $or: [{ $gt: [{ $strLenBytes: { $ifNull: ["$bannerUrl",  ""] } }, 0] },
+                                { $gt: [{ $strLenBytes: { $ifNull: ["$bannerData",""] } }, 0] }] },
+        } },
+        { $project: { _id: 0, logoData: 0, bannerData: 0 } },
+      ]).toArray(),
       col.countDocuments(filter),
     ]);
 
-    // Re-add hasLogo/hasBanner flags via a second lightweight query
-    const pools = rawDocs.map(d => d.poolAddress as string);
-    const imageFlagDocs = await col.find(
-      { poolAddress: { $in: pools }, ...(chainId ? { chainId } : {}) },
-      { projection: { poolAddress: 1, chainId: 1,
-        logoData:  { $substr: ["$logoData",  0, 5] },
-        bannerData:{ $substr: ["$bannerData",0, 5] },
-        logoUrl:   { $substr: ["$logoUrl",   0, 5] },
-        bannerUrl: { $substr: ["$bannerUrl", 0, 5] },
-      } }
-    ).toArray();
-
-    const flagMap = new Map(
-      imageFlagDocs.map(d => [
-        `${d.poolAddress}:${d.chainId}`,
-        { hasLogo: !!d.logoData || !!d.logoUrl, hasBanner: !!d.bannerData || !!d.bannerUrl },
-      ])
-    );
-
-    const docs = rawDocs.map(d => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { _id, ...rest } = d;
-      const flags = flagMap.get(`${d.poolAddress}:${d.chainId}`) ?? { hasLogo: false, hasBanner: false };
-      return { ...rest, ...flags };
-    });
-
-    return NextResponse.json({ data: docs, total, page, limit });
+    return NextResponse.json({ data: results, total, page, limit });
   } catch (err) {
     console.error("[GET /api/metadata]", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

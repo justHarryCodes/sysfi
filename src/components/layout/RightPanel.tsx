@@ -205,7 +205,7 @@ export default function RightPanel() {
     <aside
       className="hidden lg:flex flex-col fixed right-0 z-20 overflow-hidden"
       style={{
-        top:           "calc(2rem + 56px)",
+        top:           "calc(2rem + 76px)",
         bottom:        0,
         width:         "288px",
         background:    "var(--bg-nav)",

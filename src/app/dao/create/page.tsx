@@ -160,11 +160,6 @@ export default function CreateDAOPage() {
     <div className="animate-fade-in">
       {/* Page header */}
       <div className="mb-8">
-        <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full"
-          style={{ background: "var(--bg-input)", border: "1px solid var(--border-1)" }}>
-          <Users size={14} style={{ color: "var(--neon-blue)" }} />
-          <span className="text-xs font-mono" style={{ color: "var(--neon-blue)" }}>On-chain Governance</span>
-        </div>
         <h1 className="text-3xl lg:text-4xl font-display font-bold mb-2"
           style={{ background: "linear-gradient(90deg, var(--neon-blue), var(--neon-green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
           Launch a DAO

@@ -48,7 +48,7 @@ export default function MobileNav() {
                 />
               )}
               <Icon
-                size={20}
+                size={24}
                 style={{
                   color:  isActive ? neonColor : "var(--c-text-2)",
                   filter: isActive ? `drop-shadow(0 0 8px ${neonColor})` : "none",
@@ -57,7 +57,7 @@ export default function MobileNav() {
               />
             </div>
             <span
-              className="text-[10px] font-mono tracking-wide"
+              className="text-xs font-mono tracking-wide"
               style={{ color: isActive ? neonColor : "var(--c-text-2)" }}
             >
               {label}

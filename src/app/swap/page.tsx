@@ -1,7 +1,7 @@
 "use client";
 
 import { SwapWidget } from "@/components/swap/SwapWidget";
-import { ArrowLeftRight, Zap, Shield, Info } from "lucide-react";
+import { Zap, Shield, Info } from "lucide-react";
 
 const INFO_CARDS = [
   { icon: Zap,    title: "Best Price Routing", desc: "0x aggregates liquidity from 100+ DEXes and AMMs to guarantee the best available rate on every swap.", color: "green" as const },
@@ -13,14 +13,6 @@ export default function SwapPage() {
   return (
     <div className="animate-fade-in">
       <div className="mb-8">
-        <div
-          className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full"
-          style={{ background: "var(--bg-input-g)", border: "1px solid var(--border-g1)" }}
-        >
-          <ArrowLeftRight size={14} style={{ color: "var(--neon-green)" }} />
-          <span className="text-xs font-mono" style={{ color: "var(--neon-green)" }}>0x Protocol · Multi-chain · 0.3% fee</span>
-        </div>
-
         <h1
           className="text-3xl lg:text-4xl font-display font-bold mb-3"
           style={{ background: "linear-gradient(90deg, var(--neon-green), var(--neon-blue))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Rocket, Zap } from "lucide-react";
+import { Rocket } from "lucide-react";
 import LaunchForm from "@/components/token/LaunchForm";
 
 export default function LaunchPage() {
@@ -8,18 +8,6 @@ export default function LaunchPage() {
     <div className="animate-fade-in">
       {/* Header */}
       <div className="text-center mb-8">
-        <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full"
-          style={{
-            background: "rgba(0,255,135,0.06)",
-            border:     "1px solid rgba(0,255,135,0.15)",
-          }}
-        >
-          <Zap size={14} style={{ color: "var(--neon-green)" }} />
-          <span className="text-xs font-mono" style={{ color: "var(--neon-green)" }}>
-            Bonding Curve · Auto Uniswap V3 Graduation
-          </span>
-        </div>
-
         <h1
           className="text-3xl lg:text-4xl font-display font-bold mb-3"
           style={{

@@ -5,8 +5,7 @@ import { useWallet } from "@/context/WalletContext";
 import { useETHPrice } from "@/hooks/useETHPrice";
 import ChainSwitcher from "./ChainSwitcher";
 import { shortAddress, formatUSD } from "@/lib/utils";
-import { useTheme } from "@/lib/theme";
-import { AlertTriangle, Sun, Moon, Menu } from "lucide-react";
+import { AlertTriangle, Menu } from "lucide-react";
 import Image from "next/image";
 
 interface Props {
@@ -16,11 +15,10 @@ interface Props {
 export default function TopBar({ onMenuClick }: Props) {
   const { chainId, isConnected, isUnsupportedChain, balanceFormatted, chainMeta } = useWallet();
   const { usd: tokenUSD, usdChange24h, loading: priceLoading } = useETHPrice(chainId);
-  const { theme, toggle } = useTheme();
 
   return (
     <header
-      className="fixed top-8 left-0 right-0 lg:left-72 z-30 h-14 flex items-center justify-between px-4 lg:px-6"
+      className="fixed top-8 left-0 right-0 lg:left-72 z-30 h-[76px] flex items-center justify-between px-4 lg:px-6"
       style={{
         background:            "rgba(255, 255, 255, 0.08)",
         borderBottom:          "1px solid rgba(255, 255, 255, 0.18)",
@@ -29,33 +27,34 @@ export default function TopBar({ onMenuClick }: Props) {
         boxShadow:             "0 4px 32px rgba(0, 0, 0, 0.10)",
       }}
     >
-      {/* Left: hamburger (mobile) + live price + mobile chain badge */}
+      {/* Left: logo + hamburger (mobile) + live price */}
       <div className="flex items-center gap-3">
-        {/* Mobile hamburger — opens drawer */}
+        {/* Mobile hamburger */}
         <button
-          className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg flex-shrink-0 transition-colors"
+          className="lg:hidden w-10 h-10 flex items-center justify-center rounded-xl flex-shrink-0 transition-colors"
           onClick={onMenuClick}
           style={{ background: "var(--bg-input)", border: "1px solid var(--border-1)", color: "var(--c-text-2)" }}
         >
-          <Menu size={16} />
+          <Menu size={22} />
         </button>
 
+        {/* Live price dot + value */}
         <div
-          className="w-1.5 h-1.5 rounded-full animate-pulse flex-shrink-0"
+          className="w-2 h-2 rounded-full animate-pulse flex-shrink-0"
           style={{
             background: priceLoading ? "var(--neon-blue)" : "var(--neon-green)",
-            boxShadow:  `0 0 6px ${priceLoading ? "var(--neon-blue)" : "var(--neon-green)"}`,
+            boxShadow:  `0 0 8px ${priceLoading ? "var(--neon-blue)" : "var(--neon-green)"}`,
           }}
         />
 
         {!priceLoading && tokenUSD > 0 && (
-          <div className="hidden sm:flex items-center gap-2">
-            <span className="text-xs font-mono" style={{ color: "var(--neon-blue)" }}>
+          <div className="hidden sm:flex items-center gap-2.5">
+            <span className="text-base font-mono" style={{ color: "var(--neon-blue)" }}>
               {chainMeta.nativeCurrencyLabel} {formatUSD(tokenUSD)}
             </span>
             {usdChange24h !== null && (
               <span
-                className="text-[10px] font-mono px-1.5 py-0.5 rounded"
+                className="text-sm font-mono px-2 py-0.5 rounded-lg"
                 style={{
                   color:      usdChange24h >= 0 ? "var(--neon-green)" : "#ff4d4d",
                   background: usdChange24h >= 0 ? "var(--bg-input-g)" : "rgba(255,77,77,0.08)",
@@ -74,42 +73,42 @@ export default function TopBar({ onMenuClick }: Props) {
         </div>
       </div>
 
-      {/* Center: logo — absolutely centered so left/right content doesn't push it */}
+      {/* Center: logo absolutely centered */}
       <div className="absolute left-1/2 -translate-x-1/2 pointer-events-none select-none">
-        <div className="w-8 h-8 rounded-xl overflow-hidden" style={{ boxShadow: "0 0 12px rgba(255,255,255,0.15)" }}>
-          <Image src="/logo.png" alt="Sysfi" width={32} height={32} className="object-contain" priority />
+        <div className="rounded-2xl overflow-hidden" style={{ boxShadow: "0 0 16px rgba(255,255,255,0.15)" }}>
+          <Image src="/logo.png" alt="Sysfi" width={48} height={48} className="object-contain block" priority />
         </div>
       </div>
 
       {/* Right */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         {isUnsupportedChain && (
           <div
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono"
+            className="flex items-center gap-2 px-3 py-2 rounded-lg text-base font-mono"
             style={{
               background: "rgba(255,45,120,0.1)",
               border:     "1px solid rgba(255,45,120,0.3)",
               color:      "#ff2d78",
             }}
           >
-            <AlertTriangle size={12} />
+            <AlertTriangle size={18} />
             <span className="hidden sm:block">Unsupported network</span>
           </div>
         )}
 
         {isConnected && !isUnsupportedChain && (
           <div
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg"
+            className="hidden md:flex items-center gap-2 px-3 py-2 rounded-lg"
             style={{
               background: "var(--bg-input)",
               border:     "1px solid var(--border-1)",
             }}
           >
-            <span className="text-xs font-mono text-text-secondary">
+            <span className="text-base font-mono text-text-secondary">
               {balanceFormatted} {chainMeta.nativeCurrencyLabel}
             </span>
             {tokenUSD > 0 && (
-              <span className="text-xs font-mono text-text-muted">
+              <span className="text-base font-mono text-text-muted">
                 ({formatUSD(parseFloat(balanceFormatted) * tokenUSD)})
               </span>
             )}
@@ -121,28 +120,6 @@ export default function TopBar({ onMenuClick }: Props) {
           <ChainSwitcher compact />
         </div>
 
-        {/* Theme toggle */}
-        <button
-          onClick={toggle}
-          className="w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-150"
-          style={{
-            background: "var(--bg-input)",
-            border:     "1px solid var(--border-1)",
-            color:      "var(--c-text-2)",
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-3)";
-            (e.currentTarget as HTMLButtonElement).style.color = "var(--neon-blue)";
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-1)";
-            (e.currentTarget as HTMLButtonElement).style.color = "var(--c-text-2)";
-          }}
-          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-        </button>
-
         {/* RainbowKit wallet button */}
         <ConnectButton.Custom>
           {({ account, chain, openAccountModal, openChainModal, openConnectModal, mounted }) => {
@@ -153,14 +130,14 @@ export default function TopBar({ onMenuClick }: Props) {
                 {!connected ? (
                   <button
                     onClick={openConnectModal}
-                    className="btn-neon-blue px-4 py-1.5 rounded-xl text-sm font-mono font-bold tracking-wide"
+                    className="btn-neon-blue px-5 py-2 rounded-xl text-base font-mono font-bold tracking-wide"
                   >
                     Connect
                   </button>
                 ) : chain.unsupported ? (
                   <button
                     onClick={openChainModal}
-                    className="px-4 py-1.5 rounded-xl text-sm font-mono"
+                    className="px-5 py-2 rounded-xl text-base font-mono"
                     style={{
                       background: "rgba(255,45,120,0.1)",
                       border:     "1px solid rgba(255,45,120,0.3)",
@@ -172,7 +149,7 @@ export default function TopBar({ onMenuClick }: Props) {
                 ) : (
                   <button
                     onClick={openAccountModal}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all hover:scale-[1.02]"
+                    className="flex items-center gap-2.5 px-4 py-2 rounded-xl transition-all hover:scale-[1.02]"
                     style={{
                       background: "var(--bg-input-g)",
                       border:     "1px solid var(--border-g2)",
@@ -182,7 +159,7 @@ export default function TopBar({ onMenuClick }: Props) {
                       className="w-2 h-2 rounded-full flex-shrink-0"
                       style={{ background: "var(--neon-green)", boxShadow: "0 0 6px var(--neon-green)" }}
                     />
-                    <span className="text-xs font-mono" style={{ color: "var(--neon-green)" }}>
+                    <span className="text-base font-mono" style={{ color: "var(--neon-green)" }}>
                       {shortAddress(account.address)}
                     </span>
                   </button>

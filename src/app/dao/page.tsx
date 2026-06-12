@@ -23,11 +23,6 @@ export default function DAOListPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-8">
         <div>
-          <div className="inline-flex items-center gap-2 mb-4 px-4 py-2 rounded-full"
-            style={{ background: "var(--bg-input)", border: "1px solid var(--border-1)" }}>
-            <Users size={14} style={{ color: "var(--neon-blue)" }} />
-            <span className="text-xs font-mono" style={{ color: "var(--neon-blue)" }}>Decentralized Governance</span>
-          </div>
           <h1
             className="text-3xl lg:text-4xl font-display font-bold mb-2"
             style={{ background: "linear-gradient(90deg, var(--neon-blue), var(--neon-green))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}

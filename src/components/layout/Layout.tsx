@@ -65,7 +65,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Main content */}
       <main
         className="relative z-10"
-        style={{ paddingTop: "calc(2rem + 56px)", paddingBottom: "80px" }}
+        style={{ paddingTop: "calc(2rem + 76px)", paddingBottom: "80px" }}
       >
         {/*
           Desktop: offset left by sidebar (w-56 = 224px) and conditionally offset

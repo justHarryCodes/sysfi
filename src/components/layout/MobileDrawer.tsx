@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { X, Rocket, Flame, Wallet, ArrowLeftRight, Users } from "lucide-react";
+import { X, Rocket, Flame, Wallet, ArrowLeftRight, Users, Sun, Moon } from "lucide-react";
 import Image from "next/image";
 import ChainSwitcher from "./ChainSwitcher";
+import { useTheme } from "@/lib/theme";
 
 const NAV = [
   { href: "/dao",       label: "DAO",       icon: Users,          color: "blue"  },
@@ -21,7 +22,8 @@ interface Props {
 }
 
 export default function MobileDrawer({ open, onClose }: Props) {
-  const pathname  = usePathname();
+  const pathname   = usePathname();
+  const { theme, toggle } = useTheme();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
 
@@ -104,7 +106,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
                 }
               >
                 <Icon
-                  size={20}
+                  size={22}
                   style={{
                     color:  isActive ? neonColor : "var(--c-text-2)",
                     filter: isActive ? `drop-shadow(0 0 6px ${neonColor})` : "none",
@@ -112,7 +114,7 @@ export default function MobileDrawer({ open, onClose }: Props) {
                   }}
                 />
                 <span
-                  className="text-sm font-medium"
+                  className="text-base font-medium"
                   style={{ color: isActive ? neonColor : "var(--c-text-2)", fontFamily: "'Outfit', sans-serif" }}
                 >
                   {label}
@@ -128,9 +130,20 @@ export default function MobileDrawer({ open, onClose }: Props) {
           })}
         </nav>
 
-        {/* Bottom: chain switcher */}
-        <div className="px-4 py-4 flex-shrink-0" style={{ borderTop: "1px solid var(--border-1)" }}>
-          <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider mb-2">Network</p>
+        {/* Bottom: theme toggle + chain switcher */}
+        <div className="px-4 py-4 flex-shrink-0 flex flex-col gap-3" style={{ borderTop: "1px solid var(--border-1)" }}>
+          <button
+            onClick={toggle}
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-150 w-full"
+            style={{ background: "var(--bg-input)", border: "1px solid var(--border-1)", color: "var(--c-text-2)" }}
+          >
+            {theme === "dark" ? <Sun size={22} /> : <Moon size={22} />}
+            <span className="text-base font-medium" style={{ fontFamily: "'Outfit', sans-serif" }}>
+              {theme === "dark" ? "Light mode" : "Dark mode"}
+            </span>
+          </button>
+
+          <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider">Network</p>
           <ChainSwitcher />
         </div>
       </div>

@@ -99,7 +99,7 @@ export function useTokenMetadata(poolAddress: string | undefined) {
   return { meta, loading, save, update };
 }
 
-// ─── Bulk (for explore grid) ──────────────────────────────────────────────────
+// ─── Bulk (for explore grid) — single request instead of N ───────────────────
 export function useBulkMetadata(poolAddresses: string[]) {
   const chainId = useChainId();
   const [map, setMap] = useState<Record<string, TokenMetadata>>({});
@@ -108,7 +108,7 @@ export function useBulkMetadata(poolAddresses: string[]) {
     if (!poolAddresses.length) return;
     let cancelled = false;
 
-    // Serve stale entries immediately
+    // Serve cached entries immediately so cards render without waiting
     const initial: Record<string, TokenMetadata> = {};
     const toFetch: string[] = [];
     for (const p of poolAddresses) {
@@ -117,27 +117,22 @@ export function useBulkMetadata(poolAddresses: string[]) {
       else toFetch.push(p);
     }
     if (Object.keys(initial).length) setMap(initial);
-
     if (!toFetch.length) return;
 
-    Promise.all(
-      toFetch.map(p =>
-        fetch(`/api/metadata/${p}?chainId=${chainId}`)
-          .then(r => r.ok ? r.json() : null)
-          .then(j => ({ p, data: (j?.data ?? null) as TokenMetadata | null }))
-          .catch(() => ({ p, data: null }))
-      )
-    ).then(results => {
-      if (cancelled) return;
-      const next: Record<string, TokenMetadata> = {};
-      for (const { p, data } of results) {
-        if (data) {
-          next[p.toLowerCase()] = data;
-          CACHE.set(key(p, chainId), { data, ts: Date.now() });
+    // One bulk request instead of toFetch.length individual requests
+    const poolsParam = toFetch.map(p => p.toLowerCase()).join(",");
+    fetch(`/api/metadata/bulk?pools=${poolsParam}&chainId=${chainId}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(j => {
+        if (cancelled || !j?.data) return;
+        const incoming = j.data as Record<string, TokenMetadata>;
+        const now = Date.now();
+        for (const [addr, data] of Object.entries(incoming)) {
+          CACHE.set(key(addr, chainId), { data, ts: now });
         }
-      }
-      if (Object.keys(next).length) setMap(prev => ({ ...prev, ...next }));
-    });
+        setMap(prev => ({ ...prev, ...incoming }));
+      })
+      .catch(() => {/* non-critical — cards still render without metadata */});
 
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
