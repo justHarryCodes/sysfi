@@ -3,17 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { X, Rocket, Flame, Wallet, ArrowLeftRight, Users, Sun, Moon } from "lucide-react";
+import { X, Rocket, Flame, ArrowLeftRight, Users, Sun, Moon, GitBranch } from "lucide-react";
 import Image from "next/image";
 import ChainSwitcher from "./ChainSwitcher";
 import { useTheme } from "@/lib/theme";
 
 const NAV = [
-  { href: "/dao",       label: "DAO",       icon: Users,          color: "blue"  },
+  { href: "/dao",       label: "DAO",        icon: Users,          color: "blue"  },
   { href: "/",          label: "Meme Rush",  icon: Flame,          color: "green" },
   { href: "/swap",      label: "Swap",       icon: ArrowLeftRight, color: "green" },
   { href: "/launch",    label: "Launch",     icon: Rocket,         color: "green" },
-  { href: "/portfolio", label: "Portfolio",  icon: Wallet,         color: "blue"  },
+  { href: "/bridge",    label: "Bridge",     icon: GitBranch,      color: "green" },
 ] as const;
 
 interface Props {

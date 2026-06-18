@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Rocket, Flame, Wallet, ExternalLink, ArrowLeftRight, Users, Sun, Moon } from "lucide-react";
+import { Rocket, Flame, ExternalLink, ArrowLeftRight, Users, Sun, Moon, GitBranch } from "lucide-react";
 import ChainSwitcher from "./ChainSwitcher";
 import { useWallet } from "@/context/WalletContext";
 import { useTheme } from "@/lib/theme";
@@ -14,7 +14,7 @@ const NAV = [
   { href: "/",          label: "Meme Rush",  icon: Flame,          color: "green" },
   { href: "/swap",      label: "Swap",       icon: ArrowLeftRight, color: "green" },
   { href: "/launch",    label: "Launch",     icon: Rocket,         color: "green" },
-  { href: "/portfolio", label: "Portfolio",  icon: Wallet,         color: "blue"  },
+  { href: "/bridge",    label: "Bridge",     icon: GitBranch,      color: "green" },
 ] as const;
 
 export default function Sidebar() {
