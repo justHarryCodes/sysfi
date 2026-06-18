@@ -49,6 +49,54 @@ export const LAUNCH_POOL_ABI = [
   { name: "Graduated",       type: "event", inputs: [{ name: "pool", type: "address", indexed: true }, { name: "uniPool", type: "address", indexed: true }, { name: "ethProvided", type: "uint256", indexed: false }, { name: "tokensProvided", type: "uint256", indexed: false }] },
 ] as const;
 
+// ─── WSYN ABI (Wrapped SYN — voucher-minted ERC20) ───────────────────────────
+export const WSYN_ABI = [
+  // ── ERC20 core ──
+  { name: "name",         type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "string" }] },
+  { name: "symbol",       type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "string" }] },
+  { name: "decimals",     type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "uint8" }] },
+  { name: "totalSupply",  type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "uint256" }] },
+  { name: "balanceOf",    type: "function", stateMutability: "view",       inputs: [{ name: "account", type: "address" }], outputs: [{ type: "uint256" }] },
+  { name: "allowance",    type: "function", stateMutability: "view",       inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }], outputs: [{ type: "uint256" }] },
+  { name: "approve",      type: "function", stateMutability: "nonpayable", inputs: [{ name: "spender", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ type: "bool" }] },
+  { name: "transfer",     type: "function", stateMutability: "nonpayable", inputs: [{ name: "to", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ type: "bool" }] },
+  { name: "transferFrom", type: "function", stateMutability: "nonpayable", inputs: [{ name: "from", type: "address" }, { name: "to", type: "address" }, { name: "amount", type: "uint256" }], outputs: [{ type: "bool" }] },
+  // ── ERC20Burnable ──
+  { name: "burn",         type: "function", stateMutability: "nonpayable", inputs: [{ name: "amount", type: "uint256" }], outputs: [] },
+  { name: "burnFrom",     type: "function", stateMutability: "nonpayable", inputs: [{ name: "account", type: "address" }, { name: "amount", type: "uint256" }], outputs: [] },
+  // ── ERC20Permit ──
+  { name: "permit",       type: "function", stateMutability: "nonpayable", inputs: [{ name: "owner", type: "address" }, { name: "spender", type: "address" }, { name: "value", type: "uint256" }, { name: "deadline", type: "uint256" }, { name: "v", type: "uint8" }, { name: "r", type: "bytes32" }, { name: "s", type: "bytes32" }], outputs: [] },
+  { name: "nonces",       type: "function", stateMutability: "view",       inputs: [{ name: "owner", type: "address" }], outputs: [{ type: "uint256" }] },
+  { name: "DOMAIN_SEPARATOR", type: "function", stateMutability: "view",  inputs: [], outputs: [{ type: "bytes32" }] },
+  // ── WSYN-specific ──
+  { name: "mintWithVoucher", type: "function", stateMutability: "payable",
+    inputs: [
+      { name: "recipient",  type: "address" },
+      { name: "amount",     type: "uint256" },
+      { name: "nonce",      type: "bytes32" },
+      { name: "validFrom",  type: "uint256" },
+      { name: "validUntil", type: "uint256" },
+      { name: "sig",        type: "bytes"   },
+    ],
+    outputs: [],
+  },
+  { name: "signer",       type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "address" }] },
+  { name: "mintFee",      type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "uint256" }] },
+  { name: "mintedPerUser",type: "function", stateMutability: "view",       inputs: [{ name: "user", type: "address" }], outputs: [{ type: "uint256" }] },
+  { name: "usedNonces",   type: "function", stateMutability: "view",       inputs: [{ name: "nonce", type: "bytes32" }], outputs: [{ type: "bool" }] },
+  { name: "MAX_SUPPLY",   type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "uint256" }] },
+  { name: "MAX_PER_USER", type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "uint256" }] },
+  { name: "MAX_PER_TX",   type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "uint256" }] },
+  { name: "setSigner",    type: "function", stateMutability: "nonpayable", inputs: [{ name: "_signer", type: "address" }], outputs: [] },
+  { name: "setMintFee",   type: "function", stateMutability: "nonpayable", inputs: [{ name: "_fee", type: "uint256" }], outputs: [] },
+  { name: "withdrawFees", type: "function", stateMutability: "nonpayable", inputs: [], outputs: [] },
+  { name: "recoverTokens",type: "function", stateMutability: "nonpayable", inputs: [{ name: "amount", type: "uint256" }], outputs: [] },
+  // ── Events ──
+  { name: "TokensMinted", type: "event", inputs: [{ name: "recipient", type: "address", indexed: true }, { name: "amount", type: "uint256", indexed: false }, { name: "nonce", type: "bytes32", indexed: true }] },
+  { name: "Transfer",     type: "event", inputs: [{ name: "from",  type: "address", indexed: true }, { name: "to",     type: "address", indexed: true }, { name: "value", type: "uint256", indexed: false }] },
+  { name: "Approval",     type: "event", inputs: [{ name: "owner", type: "address", indexed: true }, { name: "spender", type: "address", indexed: true }, { name: "value", type: "uint256", indexed: false }] },
+] as const;
+
 // ─── ERC-20 ABI (minimal) ─────────────────────────────────────────────────────
 export const ERC20_ABI = [
   { name: "name",        type: "function", stateMutability: "view",       inputs: [], outputs: [{ type: "string" }] },
