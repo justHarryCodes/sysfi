@@ -47,9 +47,19 @@ export default clientPromise;
 
 export const METADATA_COL = "token_metadata";
 
+/** Primary DB — all writes go here. */
 export async function getDb() {
   const client = await clientPromise;
   return client.db(process.env.MONGODB_DB_NAME ?? "mongodb-database-sysfi");
+}
+
+/**
+ * Legacy / default DB — the MongoDB "test" db that was used before
+ * MONGODB_DB_NAME was set. Used only as a read fallback for images.
+ */
+export async function getLegacyDb() {
+  const client = await clientPromise;
+  return client.db("test");
 }
 
 /** Shape of a document in token_metadata */

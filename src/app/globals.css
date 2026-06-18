@@ -15,7 +15,7 @@
   --bg-surface: #0d0d1f;
   --bg-card:    #10102a;
   --bg-glass:   rgba(10,10,26,0.9);
-  --bg-nav:     rgba(6,6,17,0.96);
+  --bg-nav:     rgba(0, 0, 0, 0.55);
   --bg-modal:   rgba(10,10,26,0.97);
   --bg-input:   rgba(0,212,255,0.04);
   --bg-input-g: rgba(0,255,135,0.04);
@@ -55,7 +55,7 @@
   --bg-surface: #f5f7ff;
   --bg-card:    #ffffff;
   --bg-glass:   rgba(255,255,255,0.95);
-  --bg-nav:     rgba(255,255,255,0.97);
+  --bg-nav:     rgba(255, 255, 255, 0.55);
   --bg-modal:   rgba(255,255,255,0.99);
   --bg-input:   rgba(0,112,200,0.05);
   --bg-input-g: rgba(0,122,71,0.05);

@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getDb, METADATA_COL }       from "@/lib/mongodb";
+import { getDb, getLegacyDb, METADATA_COL } from "@/lib/mongodb";
 
 const TRANSPARENT_GIF = Buffer.from(
   "R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7",
@@ -27,13 +27,16 @@ export async function GET(req: NextRequest, { params }: { params: { pool: string
     const urlField  = isBanner ? "bannerUrl"  : "logoUrl";
     const dataField = isBanner ? "bannerData" : "logoData";
 
-    const db  = await getDb();
-    const col = db.collection(METADATA_COL);
-
     const filter = chainId ? { poolAddress: pool, chainId } : { poolAddress: pool };
-    const doc    = await col.findOne(filter, {
-      projection: { [urlField]: 1, [dataField]: 1 },
-    });
+    const proj   = { projection: { [urlField]: 1, [dataField]: 1 } };
+
+    // Try primary DB first; fall back to legacy "test" DB for older records
+    const db  = await getDb();
+    let doc = await db.collection(METADATA_COL).findOne(filter, proj);
+    if (!doc) {
+      const legacyDb = await getLegacyDb();
+      doc = await legacyDb.collection(METADATA_COL).findOne(filter, proj);
+    }
 
     // Prefer Cloudinary URL — redirect the browser directly to the CDN
     const cdnUrl = doc?.[urlField] as string | undefined;

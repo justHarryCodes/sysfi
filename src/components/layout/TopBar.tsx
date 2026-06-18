@@ -20,11 +20,11 @@ export default function TopBar({ onMenuClick }: Props) {
     <header
       className="fixed top-8 left-0 right-0 lg:left-72 z-30 h-[76px] flex items-center justify-between px-4 lg:px-6"
       style={{
-        background:            "rgba(255, 255, 255, 0.08)",
-        borderBottom:          "1px solid rgba(255, 255, 255, 0.18)",
-        backdropFilter:        "blur(28px)",
-        WebkitBackdropFilter:  "blur(28px)",
-        boxShadow:             "0 4px 32px rgba(0, 0, 0, 0.10)",
+        background:           "var(--bg-nav)",
+        borderBottom:         "1px solid var(--border-1)",
+        backdropFilter:       "blur(28px)",
+        WebkitBackdropFilter: "blur(28px)",
+        boxShadow:            "var(--shadow-nav)",
       }}
     >
       {/* Left: logo + hamburger (mobile) + live price */}
