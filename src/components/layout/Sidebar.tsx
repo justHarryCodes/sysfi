@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { Rocket, Flame, ExternalLink, ArrowLeftRight, Users, Sun, Moon, GitBranch } from "lucide-react";
+import { Rocket, Flame, ExternalLink, ArrowLeftRight, Users, Sun, Moon, GitBranch, ShieldCheck } from "lucide-react";
 import ChainSwitcher from "./ChainSwitcher";
 import { useWallet } from "@/context/WalletContext";
 import { useTheme } from "@/lib/theme";
@@ -108,6 +108,15 @@ export default function Sidebar() {
             {theme === "dark" ? "Light mode" : "Dark mode"}
           </span>
         </button>
+
+        <Link
+          href="/admin"
+          className="flex items-center gap-2 text-xs transition-colors"
+          style={{ color: pathname.startsWith("/admin") ? "var(--neon-blue)" : "var(--c-text-3)" }}
+        >
+          <ShieldCheck size={11} />
+          <span className="font-mono">Admin</span>
+        </Link>
 
         <a
           href={chainMeta.explorerUrl}

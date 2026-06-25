@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
-import { X, Rocket, Flame, ArrowLeftRight, Users, Sun, Moon, GitBranch } from "lucide-react";
+import { X, Rocket, Flame, ArrowLeftRight, Users, Sun, Moon, GitBranch, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import ChainSwitcher from "./ChainSwitcher";
 import { useTheme } from "@/lib/theme";
@@ -142,6 +142,15 @@ export default function MobileDrawer({ open, onClose }: Props) {
               {theme === "dark" ? "Light mode" : "Dark mode"}
             </span>
           </button>
+
+          <Link
+            href="/admin"
+            className="flex items-center gap-2 text-xs transition-colors"
+            style={{ color: pathname.startsWith("/admin") ? "var(--neon-blue)" : "var(--c-text-3)" }}
+          >
+            <ShieldCheck size={11} />
+            <span className="font-mono">Admin</span>
+          </Link>
 
           <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider">Network</p>
           <ChainSwitcher />
