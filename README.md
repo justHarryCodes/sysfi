@@ -1,4 +1,59 @@
-# Token Launchpad — v4 (PostgreSQL + MongoDB + Multi-chain)
+# SysFi: Token Launchpad, DEX and DAO Platform
+
+Launch and trade tokens on a **bonding curve**. When a token's pool reaches **10 ETH** it automatically graduates to Uniswap V3 liquidity. SysFi also includes swaps, DAO governance, community guilds and a SYN → WSYN bridge, across several EVM chains.
+
+## Features
+
+- **Launch:** create a token with a logo, banner, description and social links, and trade it immediately on its bonding-curve pool
+- **Trade:** live AMM buy and sell quotes, price charts (TradingView lightweight-charts) and trade history for every token
+- **Graduation:** pools migrate to Uniswap V3 once they hit the threshold
+- **Swap:** aggregated swaps through the 0x API
+- **DAOs:** create a DAO, publish proposals and vote on-chain, with a directory for each chain
+- **Guilds and feed:** community guilds and an activity feed
+- **Bridge:** convert native SYN to the ERC-20 **WSYN** ([`contracts/WSYN.sol`](contracts/WSYN.sol)) through signed mint vouchers
+- **Portfolio:** holdings and positions across launched tokens
+- **Token lists:** exports Uniswap-standard token lists for each chain (`npm run export-tokenlist`)
+- **Admin panel and PWA support**
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| App | Next.js (App Router), React, TypeScript, Tailwind CSS, Framer Motion |
+| Wallets | wagmi, viem, ethers, RainbowKit |
+| Indexing | PostgreSQL for tokens, pool stats, trades and sync state, with incremental block sync |
+| Content | MongoDB for metadata, images, DAOs and guilds; Cloudinary for media |
+| Auth / misc | Firebase Admin, Supabase |
+| Charts | lightweight-charts, Recharts |
+
+## Environment variables
+
+| Group | Variables |
+|---|---|
+| Databases | `POSTGRES_URL`, `MONGODB_URI`, `MONGODB_DB_NAME` |
+| RPC | `NEXT_PUBLIC_RPC_BASE`, `…_BASE_SEPOLIA`, `…_BSC`, `…_ARBITRUM`, `…_AVALANCHE`, `…_OPTIMISM`, `…_POLYGON` |
+| Wallets | `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` |
+| Swap | `ZERO_EX_API_KEY` |
+| Bridge | `NEXT_PUBLIC_WSYN_CONTRACT_ADDRESS`, `WSYN_CONTRACT_ADDRESS_MAINNET`, `VOUCHER_SIGNER_KEY` (server-only) |
+| Media | `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME` |
+| Firebase / Supabase | `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
+| Sync tuning | `SYNC_COOLDOWN_SECONDS`, `SYNC_BLOCKS_PER_PASS` |
+
+## Project structure
+
+```
+src/
+├── app/            # /, launch, token/[address], swap, dao, bridge, portfolio, admin + api/
+├── components/  context/  hooks/  providers/
+└── lib/            # chains, contracts, Postgres / Mongo clients, DAO and guild services
+contracts/WSYN.sol  # Wrapped SYN (ERC-20 + permit, voucher minting)
+scripts/            # DB migrations, token-list export
+tokenlist/          # Per-chain token list sources and builder
+```
+
+---
+
+## Technical reference
 
 ## Architecture
 
